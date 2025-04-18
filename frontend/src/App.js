@@ -25,8 +25,8 @@ function App() {
 
   return (
     <div>
-      <h1 style={{ padding: '10px' }}>All Products</h1>
-      <div style={{ display: 'flex' }}>
+      <h1 className="w-full text-center text-3xl font-bold text-gray-800 mb-6">All Products</h1>
+      <div className="min-h-screen bg-gray-100 flex flex-wrap justify-center gap-6 p-6">
         {products.map((item) => (
           <ProductCard key={item.id} product={item} />
         ))}
