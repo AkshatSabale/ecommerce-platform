@@ -9,18 +9,20 @@ import org.springframework.stereotype.Service;
 @Service
 public class UserService {
 
-  @Autowired
-  private UserRepository userRepository;
+  private final UserRepository userRepository;
 
-  private BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
+  @Autowired
+  public UserService(UserRepository userRepository) {
+    this.userRepository = userRepository;
+  }
 
   public String registerUser(User user) {
     if (userRepository.findByEmail(user.getEmail()).isPresent()) {
       return "User with this email already exists!";
     }
 
-    // Encrypt the password before saving
-    user.setPassword(passwordEncoder.encode(user.getPassword()));
+    // Hash the password before saving
+    user.setPassword(new BCryptPasswordEncoder().encode(user.getPassword()));
     userRepository.save(user);
     return "User registered successfully!";
   }
