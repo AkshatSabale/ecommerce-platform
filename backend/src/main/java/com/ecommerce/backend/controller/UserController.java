@@ -1,28 +1,35 @@
 package com.ecommerce.backend.controller;
 
+
 import com.ecommerce.backend.model.User;
 import com.ecommerce.backend.service.UserService;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
-@RestController
+import java.util.List;
+
 @RequestMapping("/users")
+@RestController
 public class UserController {
-
   private final UserService userService;
-
-  @Autowired
   public UserController(UserService userService) {
     this.userService = userService;
   }
 
-  @PostMapping("/register")
-  public String registerUser(@RequestBody User user) {
-    return userService.registerUser(user);
+  @GetMapping("/me")
+  public ResponseEntity<User> authenticatedUser() {
+    Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+    User currentUser = (User) authentication.getPrincipal();
+    return ResponseEntity.ok(currentUser);
   }
 
-  @GetMapping("/login")
-  public String loginUser() {
-    return "Please login";
+  @GetMapping("/")
+  public ResponseEntity<List<User>> allUsers() {
+    List <User> users = userService.allUsers();
+    return ResponseEntity.ok(users);
   }
 }

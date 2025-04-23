@@ -1,64 +1,82 @@
 package com.ecommerce.backend.model;
 
+
+
 import jakarta.persistence.*;
+import lombok.Getter;
+import lombok.Setter;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
+
+import java.time.LocalDateTime;
+import java.util.Collection;
 import java.util.List;
-import java.util.Set;
 
 @Entity
-public class User {
-
+@Table(name = "users")
+@Getter
+@Setter
+public class User implements UserDetails {
   @Id
-  @GeneratedValue(strategy = GenerationType.IDENTITY)
+  @GeneratedValue(strategy = GenerationType.AUTO)
   private Long id;
-
+  @Column(unique = true, nullable = false)
+  private String username;
   @Column(unique = true, nullable = false)
   private String email;
-
   @Column(nullable = false)
   private String password;
 
-  private Set<String> roles;
+  @Column(name = "verification_code")
+  private String verificationCode;
+  @Column(name = "verification_expiration")
+  private LocalDateTime verificationCodeExpiresAt;
+  private boolean enabled;
 
-  public User() {
-  }
-
-  // constructor (you can change/remove the generic <T> if not needed)
-  public User(String email, String password, Set<String> roles) {
+  //constructor for creating an unverified user
+  public User(String username, String email, String password) {
+    this.username = username;
     this.email = email;
     this.password = password;
-    this.roles = roles;
   }
-  // Getters and Setters
-
-  public Long getId() {
-    return id;
+  //default constructor
+  public User(){
   }
 
-  public String getEmail() {
-    return email;
+  @Override
+  public Collection<? extends GrantedAuthority> getAuthorities() {
+    return List.of();
   }
 
+  @Override
+  public String getUsername() {
+    return username;
+  }
+
+  @Override
   public String getPassword() {
     return password;
   }
 
-  public void setId(Long id) {
-    this.id = id;
+  @Override
+  public boolean isAccountNonExpired() {
+    return true; // or implement logic
   }
 
-  public void setEmail(String email) {
-    this.email = email;
+  @Override
+  public boolean isAccountNonLocked() {
+    return true; // or implement logic
   }
 
-  public void setPassword(String password) {
-    this.password = password;
+  @Override
+  public boolean isCredentialsNonExpired() {
+    return true; // or implement logic
   }
 
-  public Set<String> getRoles() {
-    return roles;
+  @Override
+  public boolean isEnabled() {
+    return enabled;
   }
+  //TODO: add proper boolean checks
 
-  public void setRoles(Set<String> roles) {
-    this.roles = roles;
-  }
 }
