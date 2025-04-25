@@ -33,6 +33,9 @@ public class SecurityConfiguration {
   public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
     http
         .csrf(csrf -> csrf.disable())
+      .authorizeHttpRequests(authorize -> authorize
+            .anyRequest().permitAll());
+        /*
         .authorizeHttpRequests(authorize -> authorize
             .requestMatchers("/auth/**").permitAll()
             .anyRequest().authenticated()
@@ -42,14 +45,14 @@ public class SecurityConfiguration {
         )
         .authenticationProvider(authenticationProvider)
         .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
-
+    */
     return http.build();
   }
 
   @Bean
   public CorsConfigurationSource corsConfigurationSource() {
     CorsConfiguration configuration = new CorsConfiguration();
-    configuration.setAllowedOrigins(List.of("https://app-backend.com", "http://localhost:8081")); //TODO: update backend url
+    configuration.setAllowedOrigins(List.of("https://app-backend.com", "http://localhost:8081/swagger-ui/index.html#/")); //TODO: update backend url
     configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE"));
     configuration.setAllowedHeaders(List.of("Authorization", "Content-Type"));
 
