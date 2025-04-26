@@ -1,5 +1,6 @@
 package com.ecommerce.backend.model;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -13,10 +14,12 @@ public class CartItem {
   private Long id;
 
   @ManyToOne
+  @JoinColumn(name = "cart_id")
+  @JsonBackReference
   private Cart cart;
 
   @ManyToOne
   private Product product;
 
-  private int quantity;
+  private Long quantity;
 }

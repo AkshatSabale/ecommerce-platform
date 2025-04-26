@@ -52,6 +52,7 @@ public class ProductController {
             .map(product -> {
                 product.setName(updatedProduct.getName());
                 product.setPrice(updatedProduct.getPrice());
+                product.setQuantity(updatedProduct.getQuantity());
                 repository.save(product);
                 logger.info("Product with ID:{} updated",id);
                 return ResponseEntity.ok("Product updated successfully");

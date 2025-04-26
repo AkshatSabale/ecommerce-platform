@@ -34,18 +34,19 @@ public class SecurityConfiguration {
     http
         .csrf(csrf -> csrf.disable())
       .authorizeHttpRequests(authorize -> authorize
-            .anyRequest().permitAll());
+          .requestMatchers("/auth/**", "/swagger-ui/**", "/v3/api-docs/**","/products","/products/**").permitAll()
+            .anyRequest().authenticated())
         /*
         .authorizeHttpRequests(authorize -> authorize
             .requestMatchers("/auth/**").permitAll()
             .anyRequest().authenticated()
         )
+        */
         .sessionManagement(session -> session
             .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
         )
         .authenticationProvider(authenticationProvider)
         .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
-    */
     return http.build();
   }
 
