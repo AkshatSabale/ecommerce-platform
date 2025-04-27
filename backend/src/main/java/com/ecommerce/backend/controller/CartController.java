@@ -1,50 +1,83 @@
 package com.ecommerce.backend.controller;
 
 import com.ecommerce.backend.dto.AddToCartRequest;
-import com.ecommerce.backend.dto.CartDto;
-import com.ecommerce.backend.model.Cart;
+import com.ecommerce.backend.dto.CartResponse;
 import com.ecommerce.backend.model.User;
-import com.ecommerce.backend.repository.ProductRepository;
 import com.ecommerce.backend.service.CartService;
 import com.ecommerce.backend.service.UserService;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/cart")
+@RequestMapping("/api/cart")
+@RequiredArgsConstructor
+@Slf4j
 public class CartController {
 
-  private final ProductRepository repository;
-  private final UserService userService;
   private final CartService cartService;
+  private final UserService userService;
 
-  public CartController(ProductRepository repository, UserService userService,
-      CartService cartService) {
-    this.repository = repository;
-    this.userService = userService;
-    this.cartService = cartService;
+  @GetMapping
+  public ResponseEntity<CartResponse> getCart() {
+    Long userId = getAuthenticatedUserId();
+    return ResponseEntity.ok(cartService.getCart(userId));
   }
 
-  @GetMapping("/getCartByUser")
-  public ResponseEntity<CartDto> userCart() {
-    Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-    String email = authentication.getName(); // extract the username/email from the token
-    User currentUser = userService.getUserByEmail(email);
-    Cart cart = cartService.getCartByUser(currentUser);
-    return ResponseEntity.ok(cartService.mapToDto(cart));
+  @PostMapping("/items")
+  public ResponseEntity<CartResponse> addToCart(
+      @RequestBody @Valid AddToCartRequest request) {
+    Long userId = getAuthenticatedUserId();
+    return ResponseEntity.ok(
+        cartService.addToCart(userId, request.getProductId(), request.getQuantity())
+    );
   }
 
-  @PostMapping("/insertIntoCart")
-  public ResponseEntity<CartDto> addToCart(@RequestBody AddToCartRequest request) {
+  @PutMapping("/items/{productId}")
+  public ResponseEntity<CartResponse> updateCartItem(
+      @PathVariable Long productId,
+      @RequestParam int quantity) {
+    Long userId = getAuthenticatedUserId();
+    return ResponseEntity.ok(
+        cartService.updateCartItem(userId, productId, quantity)
+    );
+  }
+
+  @DeleteMapping("/items/{productId}")
+  public ResponseEntity<Void> removeFromCart(
+      @PathVariable Long productId) {
+    Long userId = getAuthenticatedUserId();
+    cartService.removeFromCart(userId, productId);
+    return ResponseEntity.noContent().build();
+  }
+
+  @DeleteMapping
+  public ResponseEntity<Void> clearCart() {
+    Long userId = getAuthenticatedUserId();
+    cartService.clearCart(userId);
+    return ResponseEntity.noContent().build();
+  }
+
+  private Long getAuthenticatedUserId() {
     Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-    String email = authentication.getName();
-    User currentUser = userService.getUserByEmail(email);
 
-    Cart updatedCart = cartService.addToCart(currentUser, request.getProductId(),
-        request.getQuantity());
+    if (authentication == null || !authentication.isAuthenticated()) {
+      throw new SecurityException("User not authenticated");
+    }
 
-    return ResponseEntity.ok(cartService.mapToDto(updatedCart));
+    Object principal = authentication.getPrincipal();
+    if (!(principal instanceof UserDetails)) {
+      throw new SecurityException("Invalid authentication principal");
+    }
+
+    String username = ((UserDetails) principal).getUsername();
+    User user = userService.getUserByUserName(username);
+
+    return user.getId();
   }
 }

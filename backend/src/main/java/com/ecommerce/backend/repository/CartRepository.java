@@ -3,22 +3,20 @@ package com.ecommerce.backend.repository;
 
 import com.ecommerce.backend.model.Cart;
 import com.ecommerce.backend.model.User;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
-@Repository
-public class CartRepository {
-  private final Map<Long, Cart> cartStorage = new HashMap<>();
+public interface CartRepository extends JpaRepository<Cart, Long> {
 
-  public Optional<Cart> findByUser(User user) {
-    return Optional.ofNullable(cartStorage.get(user.getId()));
-  }
+  Optional<Cart> findByUserId(Long userId);
 
-  public Cart save(Cart cart) {
-    cartStorage.put(cart.getUser().getId(), cart);
-    return cart;
-  }
+  @Modifying
+  @Query("DELETE FROM CartItem ci WHERE ci.cart.id = :cartId AND ci.product.id = :productId")
+  void deleteCartItem(Long cartId, Long productId);
 }

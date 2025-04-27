@@ -1,5 +1,6 @@
 package com.ecommerce.backend.service;
 
+import com.ecommerce.backend.model.User;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
@@ -39,6 +40,13 @@ public class JwtService {
 
   public String generateToken(Map<String, Object> extraClaims, UserDetails userDetails) {
     return buildToken(extraClaims, userDetails, jwtExpiration);
+  }
+
+  //added for CartAPI
+  public String generateToken(User user) {
+    Map<String, Object> extraClaims = new HashMap<>();
+    extraClaims.put("userId", user.getId());
+    return generateToken(extraClaims, user);
   }
 
   public long getExpirationTime() {
@@ -85,5 +93,11 @@ public class JwtService {
   private SecretKey getSignInKey() {
     byte[] keyBytes = Decoders.BASE64.decode(secretKey);
     return Keys.hmacShaKeyFor(keyBytes);
+  }
+
+  // Created for cartService
+  public Long extractUserId(String token) {
+    final Claims claims = extractAllClaims(token);
+    return claims.get("userId", Long.class);
   }
 }

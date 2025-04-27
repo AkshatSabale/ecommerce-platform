@@ -1,6 +1,8 @@
 package com.ecommerce.backend.config;
 
 
+import com.ecommerce.backend.model.User;
+import com.ecommerce.backend.repository.UserRepository;
 import com.ecommerce.backend.service.JwtService;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -21,20 +23,52 @@ import java.io.IOException;
 
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
-  private final HandlerExceptionResolver handlerExceptionResolver;
 
   private final JwtService jwtService;
-  private final UserDetailsService userDetailsService;
+  private final UserRepository userRepository;
 
-  public JwtAuthenticationFilter(
-      JwtService jwtService,
-      UserDetailsService userDetailsService,
-      HandlerExceptionResolver handlerExceptionResolver
-  ) {
+  public JwtAuthenticationFilter(JwtService jwtService, UserRepository userRepository) {
     this.jwtService = jwtService;
-    this.userDetailsService = userDetailsService;
-    this.handlerExceptionResolver = handlerExceptionResolver;
+    this.userRepository = userRepository;
   }
+
+  @Override
+  protected void doFilterInternal(HttpServletRequest request,
+      HttpServletResponse response,
+      FilterChain filterChain) throws ServletException, IOException {
+
+    final String authHeader = request.getHeader("Authorization");
+    final String jwt;
+    final String email;
+
+    if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+      filterChain.doFilter(request, response);
+      return;
+    }
+
+    jwt = authHeader.substring(7);
+    email = jwtService.extractUsername(jwt);
+
+    if (email != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+      // FETCH USER FROM DATABASE
+      User user = userRepository.findByUsername(email)
+          .orElseThrow(() -> new RuntimeException("User not found with email: " + email));
+
+      if (jwtService.isTokenValid(jwt, user)) {
+        UsernamePasswordAuthenticationToken authToken =
+            new UsernamePasswordAuthenticationToken(
+                user,
+                null,
+                user.getAuthorities()
+            );
+        authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+        SecurityContextHolder.getContext().setAuthentication(authToken);
+      }
+    }
+
+    filterChain.doFilter(request, response);
+  }
+
 
   @Override
   protected boolean shouldNotFilter(HttpServletRequest request) {
@@ -44,45 +78,5 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         path.equals("/products") ||
         path.startsWith("/swagger-ui/") ||
         path.startsWith("/v3/api-docs/");
-  }
-
-  @Override
-  protected void doFilterInternal(
-      @NonNull HttpServletRequest request,
-      @NonNull HttpServletResponse response,
-      @NonNull FilterChain filterChain
-  ) throws ServletException, IOException {
-    final String authHeader = request.getHeader("Authorization");
-
-    if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-      filterChain.doFilter(request, response);
-      return;
-    }
-
-    try {
-      final String jwt = authHeader.substring(7);
-      final String userEmail = jwtService.extractUsername(jwt);
-
-      Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-
-      if (userEmail != null && authentication == null) {
-        UserDetails userDetails = this.userDetailsService.loadUserByUsername(userEmail);
-
-        if (jwtService.isTokenValid(jwt, userDetails)) {
-          UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
-              userDetails,
-              null,
-              userDetails.getAuthorities()
-          );
-
-          authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-          SecurityContextHolder.getContext().setAuthentication(authToken);
-        }
-      }
-
-      filterChain.doFilter(request, response);
-    } catch (Exception exception) {
-      handlerExceptionResolver.resolveException(request, response, null, exception);
-    }
   }
 }

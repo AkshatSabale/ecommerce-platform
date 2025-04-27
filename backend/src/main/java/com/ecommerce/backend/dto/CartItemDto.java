@@ -1,14 +1,16 @@
 package com.ecommerce.backend.dto;
 
-import lombok.Getter;
-import lombok.Setter;
+import java.math.BigDecimal;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
-@Getter
-@Setter
+@Data
+@AllArgsConstructor
+@NoArgsConstructor
 public class CartItemDto {
-  private Long id;
+  private Long productId;
   private String productName;
-  private Long quantity;
-
-  // getters/setters
+  private Double productPrice;
+  private int quantity;
 }
