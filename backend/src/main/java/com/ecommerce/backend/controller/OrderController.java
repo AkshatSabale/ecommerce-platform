@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -52,6 +53,14 @@ public class OrderController
     Long userId = getAuthenticatedUserId();
     orderService.clearOrder(userId,orderId);
     return ResponseEntity.noContent().build();
+  }
+
+  @PutMapping("/users/{userId}/orders/{orderId}/confirm")
+  public ResponseEntity<OrderResponse> confirmOrder(
+      @PathVariable Long userId,
+      @PathVariable Long orderId) {
+    OrderResponse response = orderService.confirmOrderAndDeductInventory(userId, orderId);
+    return ResponseEntity.ok(response);
   }
 
 

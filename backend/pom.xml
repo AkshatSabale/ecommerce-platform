@@ -64,6 +64,14 @@
 			<version>2.1.0</version>
 		</dependency>
 
+		<!-- Razorpay -->
+
+		<dependency>
+			<groupId>com.razorpay</groupId>
+			<artifactId>razorpay-java</artifactId>
+			<version>1.4.4</version>
+		</dependency>
+
 		<!-- JWT -->
 		<dependency>
 			<groupId>io.jsonwebtoken</groupId>

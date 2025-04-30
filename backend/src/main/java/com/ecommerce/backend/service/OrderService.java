@@ -9,9 +9,12 @@ import com.ecommerce.backend.model.Order;
 import com.ecommerce.backend.model.OrderItem;
 import com.ecommerce.backend.model.OrderStatus;
 import com.ecommerce.backend.model.PaymentMethod;
+import com.ecommerce.backend.model.Product;
 import com.ecommerce.backend.model.User;
 import com.ecommerce.backend.repository.OrderRepository;
+import com.ecommerce.backend.repository.ProductRepository;
 import com.ecommerce.backend.repository.UserRepository;
+import jakarta.transaction.Transactional;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -27,6 +30,7 @@ public class OrderService
   private final UserRepository userRepository;
   private final CheckoutService checkoutService;
   private final UserService userService;
+  private final ProductRepository productRepository;
 
   //we are blinding returning first order chance that user has multiple order , need to fix in long term
   public List<OrderResponse> getOrder(Long userId) {
@@ -74,6 +78,37 @@ public class OrderService
 
     order.setStatus(OrderStatus.CANCELLED); // If using status, otherwise delete
     orderRepository.save(order); // save the updated status
+  }
+
+  @Transactional
+  public OrderResponse confirmOrderAndDeductInventory(Long userId, Long orderId) {
+    Order order = orderRepository.findById(orderId)
+        .orElseThrow(() -> new ResourceNotFoundException("Order not found with ID: " + orderId));
+
+    if (!order.getUserId().equals(userId)) {
+      throw new UnauthorizedException("You cannot confirm this order.");
+    }
+
+    if (order.getStatus() == OrderStatus.CONFIRMED) {
+      throw new IllegalStateException("Order already confirmed.");
+    }
+
+    for (OrderItem item : order.getOrderItems()) {
+      Product product = productRepository.findById(item.getProductId())
+          .orElseThrow(() -> new ResourceNotFoundException("Product not found"));
+
+      if (product.getQuantity() < item.getQuantity()) {
+        throw new RuntimeException("Insufficient stock for product: " + product.getName());
+      }
+
+      product.setQuantity(product.getQuantity() - item.getQuantity());
+      productRepository.save(product);
+    }
+
+    order.setStatus(OrderStatus.CONFIRMED); // or whatever status means "confirmed"
+    orderRepository.save(order);
+
+    return mapToOrderResponse(order);
   }
 
   private OrderResponse mapToOrderResponse(Order order) {
