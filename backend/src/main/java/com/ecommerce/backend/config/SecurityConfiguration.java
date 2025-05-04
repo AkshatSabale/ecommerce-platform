@@ -33,6 +33,7 @@ public class SecurityConfiguration {
   public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
     http
         .csrf(csrf -> csrf.disable())
+        .cors(cors -> cors.configurationSource(corsConfigurationSource()))
       .authorizeHttpRequests(authorize -> authorize
           .requestMatchers("/auth/**", "/swagger-ui/**", "/v3/api-docs/**","/products","/products/**").permitAll()
             .anyRequest().authenticated())
@@ -53,12 +54,22 @@ public class SecurityConfiguration {
   @Bean
   public CorsConfigurationSource corsConfigurationSource() {
     CorsConfiguration configuration = new CorsConfiguration();
-    configuration.setAllowedOrigins(List.of("https://app-backend.com", "http://localhost:8081/swagger-ui/index.html#/")); //TODO: update backend url
+    configuration.setAllowedOrigins(List.of("http://localhost:3000" ));//, "http://localhost:8081/swagger-ui/index.html#/")); //TODO: update backend url
     configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE"));
     configuration.setAllowedHeaders(List.of("Authorization", "Content-Type"));
+    configuration.setAllowCredentials(true);
+    configuration.setExposedHeaders(List.of("Authorization"));
 
     UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
     source.registerCorsConfiguration("/**", configuration);
     return source;
   }
 }
+
+/*
+    configuration.setAllowedOrigins(List.of("http://localhost:3000" ));//, "http://localhost:8081/swagger-ui/index.html#/")); //TODO: update backend url
+    configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE"));
+    configuration.setAllowedHeaders(List.of("Authorization", "Content-Type"));
+    configuration.setAllowCredentials(true);
+    configuration.setExposedHeaders(List.of("Authorization"));
+ */

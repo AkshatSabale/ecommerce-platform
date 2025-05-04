@@ -2,6 +2,8 @@ package com.ecommerce.backend.controller;
 
 import com.ecommerce.backend.model.Product;
 import com.ecommerce.backend.repository.ProductRepository;
+import com.ecommerce.backend.service.ProductService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -16,6 +18,9 @@ public class ProductController {
 
     private final ProductRepository repository;
     private static final Logger logger = LoggerFactory.getLogger(ProductController.class);
+    @Autowired
+    private ProductService productService;
+
 
 
     public ProductController(ProductRepository repository) {
@@ -61,6 +66,11 @@ public class ProductController {
                 logger.warn("Product with ID:{} not found for update", id);
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Product with ID " + id + " not found");
             });
-
     }
+
+    @GetMapping("/search")
+    public List<Product> searchProducts(@RequestParam String query) {
+        return productService.searchProducts(query);
+    }
+
 }

@@ -9,6 +9,7 @@ import org.springframework.context.annotation.ComponentScan;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 
 @SpringBootApplication(exclude = { SecurityAutoConfiguration.class })
+@EntityScan(basePackages = "com.ecommerce.backend.model")
 public class BackendApplication {
 
 	public static void main(String[] args) {
