@@ -10,6 +10,7 @@ import com.ecommerce.backend.model.User;
 import com.ecommerce.backend.repository.CartRepository;
 import com.ecommerce.backend.repository.ProductRepository;
 import com.ecommerce.backend.repository.UserRepository;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -49,6 +50,7 @@ public class CartService {
       cart.getItems().add(newItem);
     }
 
+    cart.setUpdatedAt(LocalDateTime.now());
     cart = cartRepository.save(cart);
     return mapToCartResponse(cart);
   }
@@ -65,6 +67,7 @@ public class CartService {
         .orElseThrow(() -> new ResourceNotFoundException("Item not found in cart"));
 
     item.setQuantity(quantity);
+    cart.setUpdatedAt(LocalDateTime.now());
     cart = cartRepository.save(cart);
     return mapToCartResponse(cart);
   }
@@ -72,12 +75,14 @@ public class CartService {
   public void removeFromCart(Long userId, Long productId) {
     Cart cart = getCartEntity(userId);
     cart.getItems().removeIf(item -> item.getProduct().getId().equals(productId));
+    cart.setUpdatedAt(LocalDateTime.now());
     cartRepository.save(cart);
   }
 
   public void clearCart(Long userId) {
     Cart cart = getCartEntity(userId);
     cart.getItems().clear();
+    cart.setUpdatedAt(LocalDateTime.now());
     cartRepository.save(cart);
   }
 

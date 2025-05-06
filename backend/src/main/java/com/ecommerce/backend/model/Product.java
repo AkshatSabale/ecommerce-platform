@@ -16,6 +16,8 @@ public class Product {
   private String name;
   private Double price;
   private String description;
+  @Column(name = "image_filename")
+  private String imageFilename;
 
 
   public Product() {}

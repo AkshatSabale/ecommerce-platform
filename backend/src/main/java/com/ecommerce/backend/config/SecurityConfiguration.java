@@ -3,6 +3,7 @@ package com.ecommerce.backend.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -35,7 +36,9 @@ public class SecurityConfiguration {
         .csrf(csrf -> csrf.disable())
         .cors(cors -> cors.configurationSource(corsConfigurationSource()))
       .authorizeHttpRequests(authorize -> authorize
-          .requestMatchers("/auth/**", "/swagger-ui/**", "/v3/api-docs/**","/products","/products/**").permitAll()
+          .requestMatchers("/auth/**", "/swagger-ui/**", "/v3/api-docs/**","/products","/products/**","/images/**", "/products/search",
+              "/products/search/**").permitAll()
+          .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
             .anyRequest().authenticated())
         /*
         .authorizeHttpRequests(authorize -> authorize
@@ -55,7 +58,7 @@ public class SecurityConfiguration {
   public CorsConfigurationSource corsConfigurationSource() {
     CorsConfiguration configuration = new CorsConfiguration();
     configuration.setAllowedOrigins(List.of("http://localhost:3000" ));//, "http://localhost:8081/swagger-ui/index.html#/")); //TODO: update backend url
-    configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE"));
+    configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE","OPTIONS"));
     configuration.setAllowedHeaders(List.of("Authorization", "Content-Type"));
     configuration.setAllowCredentials(true);
     configuration.setExposedHeaders(List.of("Authorization"));

@@ -18,7 +18,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/api/checkout")
+@RequestMapping("/checkout")
 @RequiredArgsConstructor
 @Slf4j
 public class CheckoutController
