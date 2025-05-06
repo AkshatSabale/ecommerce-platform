@@ -1,21 +1,22 @@
 import React, { useEffect, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import api from '../services/api';
 import { addToCart } from '../services/cartService';
 import Toast from './Toast';
-import SearchBar from '../components/SearchBar';
 
 interface Product {
   id: number;
   name: string;
   quantity: number;
   price: number;
-  imageFilename: string
+  imageFilename: string;
 }
 
 const ProductList: React.FC = () => {
   const [products, setProducts] = useState<Product[]>([]);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
-  const [searchQuery, setSearchQuery] = useState('');
+
+  const location = useLocation();
 
   const fetchProducts = async (query: string = '') => {
     try {
@@ -28,14 +29,12 @@ const ProductList: React.FC = () => {
     }
   };
 
+  // Effect runs whenever the URL changes
   useEffect(() => {
-    fetchProducts();
-  }, []);
-
-  const handleSearch = (query: string) => {
-    setSearchQuery(query);
+    const params = new URLSearchParams(location.search);
+    const query = params.get('query') || '';
     fetchProducts(query);
-  };
+  }, [location.search]);
 
   const handleAddToCart = async (productId: number) => {
     try {
@@ -54,14 +53,13 @@ const ProductList: React.FC = () => {
     <div className="p-4">
       <h1 className="text-2xl font-bold mb-4">Products</h1>
 
-      {/* Search bar at the top */}
-      <SearchBar onSearch={handleSearch} />
-
       <ul className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {products.map((product) => (
           <li key={product.id} className="border p-4 rounded">
             <h2 className="text-xl font-semibold">{product.name}</h2>
-            <p className="mb-1">Quantity: <span className="font-medium">{product.quantity}</span></p>
+            <p className="mb-1">
+              Quantity: <span className="font-medium">{product.quantity}</span>
+            </p>
             <p className="text-green-600 font-bold">${product.price}</p>
             <button
               onClick={() => handleAddToCart(product.id)}
@@ -78,10 +76,7 @@ const ProductList: React.FC = () => {
         ))}
       </ul>
 
-      {/* Display Toast if there is a message */}
-      {toastMessage && (
-        <Toast message={toastMessage} onClose={() => setToastMessage(null)} />
-      )}
+      {toastMessage && <Toast message={toastMessage} onClose={() => setToastMessage(null)} />}
     </div>
   );
 };
