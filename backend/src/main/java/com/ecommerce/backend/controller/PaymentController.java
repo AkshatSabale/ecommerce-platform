@@ -1,14 +1,16 @@
 package com.ecommerce.backend.controller;
 
 import com.ecommerce.backend.service.PaymentService;
+import java.util.Map;
 import lombok.RequiredArgsConstructor;
+import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/payment")
+@RequestMapping("/payment")
 public class PaymentController {
 
   private final PaymentService paymentService;
@@ -16,7 +18,7 @@ public class PaymentController {
   @PostMapping("/create")
   public ResponseEntity<?> createOrder(@RequestParam Double amount) {
     try {
-      String razorpayOrder = paymentService.createPaymentOrder(amount, "INR");
+      Map razorpayOrder = paymentService.createPaymentOrder(amount, "INR");
       return ResponseEntity.ok(razorpayOrder);
     } catch (Exception e) {
       return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)

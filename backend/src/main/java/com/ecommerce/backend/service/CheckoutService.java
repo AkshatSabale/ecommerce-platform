@@ -1,17 +1,16 @@
 package com.ecommerce.backend.service;
 
+import com.ecommerce.backend.dto.AddressDto;
 import com.ecommerce.backend.dto.CartItemDto;
 import com.ecommerce.backend.dto.CartResponse;
+import com.ecommerce.backend.dto.CheckoutRequest;
 import com.ecommerce.backend.dto.OrderItemResponse;
 import com.ecommerce.backend.dto.OrderResponse;
-import com.ecommerce.backend.model.Cart;
 import com.ecommerce.backend.model.Order;
 import com.ecommerce.backend.model.OrderItem;
 import com.ecommerce.backend.model.OrderStatus;
-import com.ecommerce.backend.model.PaymentMethod;
 import com.ecommerce.backend.repository.CartRepository;
 import com.ecommerce.backend.repository.OrderRepository;
-import com.ecommerce.backend.repository.ProductRepository;
 import com.ecommerce.backend.repository.UserRepository;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -29,7 +28,7 @@ public class CheckoutService {
   private final UserRepository userRepository;
   private final OrderRepository orderRepository;
 
-  public OrderResponse checkout(Long userId, PaymentMethod paymentMethod) {
+  public OrderResponse checkout(Long userId, CheckoutRequest request) {
     // Step 1: Get Cart
     CartResponse cartResponse = cartService.getCart(userId);
 
@@ -58,8 +57,13 @@ public class CheckoutService {
     order.setTotalAmount(totalAmount);
     order.setStatus(OrderStatus.PENDING);   // Default status
     order.setCreatedAt(LocalDateTime.now());
-    order.setPaymentMethod(paymentMethod);
+    order.setPaymentMethod(request.getPaymentMethod());
     order.setOrderItems(orderItems);
+    order.setDoorNumber(request.getAddress().getDoorNumber());
+    order.setAddressLine1(request.getAddress().getAddressLine1());
+    order.setAddressLine2(request.getAddress().getAddressLine2());
+    order.setPinCode(request.getAddress().getPinCode());
+    order.setCity(request.getAddress().getCity());
 
     // Link back each orderItem to the order
     for (OrderItem orderItem : orderItems) {
@@ -83,12 +87,20 @@ public class CheckoutService {
         ))
         .collect(Collectors.toList());
 
+    AddressDto addressDto=new AddressDto();
+    addressDto.setDoorNumber(savedOrder.getDoorNumber());
+    addressDto.setAddressLine1(savedOrder.getAddressLine1());
+    addressDto.setAddressLine2(savedOrder.getAddressLine2());
+    addressDto.setCity(savedOrder.getCity());
+    addressDto.setPinCode(savedOrder.getPinCode());
+
     return new OrderResponse(
         savedOrder.getId(),
         orderItemResponses,
         savedOrder.getStatus(),
         savedOrder.getTotalAmount(),
-        savedOrder.getPaymentMethod()
+        savedOrder.getPaymentMethod(),
+        addressDto
     );
   }
 }

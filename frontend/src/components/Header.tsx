@@ -23,11 +23,19 @@ const Header: React.FC = () => {
         <SearchBar onSearch={handleSearch} />
 
         <button
+          onClick={() => navigate('/address')}
+          className="bg-gray-300 text-black px-4 py-2 rounded hover:bg-gray-400"
+        >
+          Delivering To
+        </button>
+
+        <button
           onClick={() => navigate('/cart')}
           className="flex items-center text-blue-600 hover:text-blue-800"
         >
           <FaShoppingCart size={24} />
         </button>
+
         <button
           onClick={() => navigate('/login')}
           className="bg-blue-500 text-white px-4 py-2 rounded"

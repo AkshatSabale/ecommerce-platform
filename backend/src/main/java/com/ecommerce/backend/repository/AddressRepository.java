@@ -7,5 +7,5 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface AddressRepository extends JpaRepository<Address, Long>
 {
-  Optional<Address> findByUserId(Long userId);
+  List<Address> findByUserId(Long userId);
 }

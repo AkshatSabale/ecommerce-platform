@@ -29,25 +29,19 @@ const CartPage: React.FC = () => {
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const navigate = useNavigate();
 
-  const handleCheckout = async () => {
-    if (!cart || cart.items.length === 0) {
-      setToastMessage('Cart is empty. Please add items before checking out.');
-      return;
+const handleCheckout = () => {
+  if (!cart || cart.items.length === 0) {
+    setToastMessage('Cart is empty. Please add items before checking out.');
+    return;
+  }
+
+  navigate('/order', {
+    state: {
+      cart,
+      paymentMethod,
     }
-
-    try {
-      await api.post('/checkout', null, {
-        params: { paymentMethod },
-      });
-
-      setToastMessage('Order placed successfully!');
-      navigate('/order');
-    } catch (error: any) {
-      const msg = error.response?.data?.message || 'Checkout failed.';
-      setToastMessage(msg);
-    }
-  };
-
+  });
+};
   const fetchCart = async () => {
     try {
       const response = await api.get<CartResponse>('/cart');

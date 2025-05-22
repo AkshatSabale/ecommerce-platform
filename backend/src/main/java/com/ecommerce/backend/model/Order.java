@@ -32,4 +32,9 @@ public class Order {
   @Enumerated(EnumType.STRING)
   private PaymentMethod paymentMethod;
 
+  private String doorNumber;
+  private String addressLine1;
+  private String addressLine2;
+  private Long pinCode;
+  private String city;
 }

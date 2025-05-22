@@ -5,6 +5,7 @@ import com.ecommerce.backend.model.User;
 import com.ecommerce.backend.service.AddressService;
 import com.ecommerce.backend.service.UserService;
 import jakarta.validation.Valid;
+import java.util.NoSuchElementException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -32,53 +33,52 @@ public class AddressController {
 
   @GetMapping
   public ResponseEntity<?> getAddress() {
-    Long userId = getAuthenticatedUserId();
     try {
-      AddressResponse address = addressService.getAddress(userId);
-      return ResponseEntity.ok(address);
-    } catch (RuntimeException e) {
+      Long userId = getAuthenticatedUserId();
+      return ResponseEntity.ok(addressService.getAddress(userId));
+    } catch (NoSuchElementException e) {
       return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+    } catch (SecurityException e) {
+      return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Please log in.");
     }
   }
 
   @PostMapping
-  public ResponseEntity<?> newAddress(@RequestBody @Valid AddressResponse addressResponse) {
-    Long userId = getAuthenticatedUserId();
+  public ResponseEntity<?> addAddress(@RequestBody @Valid AddressResponse addressResponse) {
     try {
-      addressService.addAddress(userId, addressResponse.getAddressLine1(),
-          addressResponse.getAddressLine2(), addressResponse.getCity(),
-          addressResponse.getDoorNumber(), addressResponse.getPinCode());
+      Long userId = getAuthenticatedUserId();
+      addressService.addAddress(userId, addressResponse.getAddressLine1(), addressResponse.getAddressLine2(),
+          addressResponse.getCity(), addressResponse.getDoorNumber(), addressResponse.getPinCode());
       return ResponseEntity.ok("Address added successfully.");
-    } catch (RuntimeException e) {
+    } catch (IllegalStateException e) {
       return ResponseEntity.status(HttpStatus.CONFLICT).body(e.getMessage());
     }
   }
 
   @PutMapping
   public ResponseEntity<?> updateAddress(@RequestBody @Valid AddressResponse addressResponse) {
-    Long userId = getAuthenticatedUserId();
     try {
+      Long userId = getAuthenticatedUserId();
       addressService.updateAddress(userId, addressResponse);
       return ResponseEntity.ok("Address updated successfully.");
-    } catch (RuntimeException e) {
+    } catch (NoSuchElementException e) {
       return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
     }
   }
 
   @DeleteMapping
   public ResponseEntity<?> deleteAddress() {
-    Long userId = getAuthenticatedUserId();
     try {
+      Long userId = getAuthenticatedUserId();
       addressService.deleteAddress(userId);
       return ResponseEntity.ok("Address deleted successfully.");
-    } catch (RuntimeException e) {
+    } catch (NoSuchElementException e) {
       return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
     }
   }
 
   private Long getAuthenticatedUserId() {
     Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-
     if (authentication == null || !authentication.isAuthenticated()) {
       throw new SecurityException("User not authenticated");
     }

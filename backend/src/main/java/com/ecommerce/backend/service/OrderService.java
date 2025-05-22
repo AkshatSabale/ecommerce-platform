@@ -1,5 +1,6 @@
 package com.ecommerce.backend.service;
 
+import com.ecommerce.backend.dto.AddressDto;
 import com.ecommerce.backend.dto.OrderItemResponse;
 import com.ecommerce.backend.dto.OrderResponse;
 import com.ecommerce.backend.exception.ResourceNotFoundException;
@@ -32,7 +33,6 @@ public class OrderService
   private final UserService userService;
   private final ProductRepository productRepository;
 
-  //we are blinding returning first order chance that user has multiple order , need to fix in long term
   public List<OrderResponse> getOrder(Long userId) {
     List<Order> orders = orderRepository.findByUserId(userId);
     List<OrderResponse> orderResponseList=new ArrayList<>();
@@ -49,12 +49,15 @@ public class OrderService
     return orderResponseList;
   }
 
+  /*
   private OrderResponse createNewOrder(Long userId) {
     User user = userRepository.findById(userId)
         .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
     return checkoutService.checkout(userId, PaymentMethod.COD);
   }
+
+   */
 
   public OrderResponse getOrderById(Long userId, Long orderId) {
     Order order = orderRepository.findById(orderId)
@@ -118,6 +121,14 @@ public class OrderService
     response.setStatus(order.getStatus());
     response.setTotalAmount(order.getTotalAmount());
     response.setPaymentMethod(order.getPaymentMethod());
+
+    AddressDto addressDto=new AddressDto();
+    addressDto.setDoorNumber(order.getDoorNumber());
+    addressDto.setAddressLine1(order.getAddressLine1());
+    addressDto.setAddressLine2(order.getAddressLine2());
+    addressDto.setPinCode(order.getPinCode());
+    addressDto.setCity(order.getCity());
+    response.setAddressDto(addressDto);
     List<OrderItemResponse> list=new ArrayList<>();
     for (OrderItem oi : order.getOrderItems())
     {

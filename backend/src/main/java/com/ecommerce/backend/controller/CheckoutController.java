@@ -1,5 +1,6 @@
 package com.ecommerce.backend.controller;
 
+import com.ecommerce.backend.dto.CheckoutRequest;
 import com.ecommerce.backend.dto.OrderResponse;
 import com.ecommerce.backend.model.PaymentMethod;
 import com.ecommerce.backend.model.User;
@@ -13,6 +14,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -27,12 +29,12 @@ public class CheckoutController
   private final UserService userService;
 
   @PostMapping
-  public ResponseEntity<OrderResponse> checkout(@RequestParam PaymentMethod paymentMethod)
+  public ResponseEntity<OrderResponse> checkout(@RequestBody CheckoutRequest request)
   {
     // Here you will hardcode userId for now (until auth comes)
     Long userId = getAuthenticatedUserId();
-
-    OrderResponse orderResponse = checkoutService.checkout(userId, paymentMethod);
+    System.out.println("Checkout request received: " + request);
+    OrderResponse orderResponse = checkoutService.checkout(userId, request);
     return ResponseEntity.ok(orderResponse);
   }
 

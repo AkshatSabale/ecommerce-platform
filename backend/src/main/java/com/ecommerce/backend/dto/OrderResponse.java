@@ -17,4 +17,5 @@ public class OrderResponse
   private OrderStatus status;
   private Double totalAmount;
   private PaymentMethod paymentMethod;
+  private AddressDto addressDto;
 }

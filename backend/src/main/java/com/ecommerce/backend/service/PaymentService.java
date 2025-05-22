@@ -8,6 +8,8 @@ import com.razorpay.Payment;
 import com.razorpay.RazorpayClient;
 import com.razorpay.RazorpayException;
 import com.razorpay.Refund;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
@@ -28,7 +30,7 @@ public class PaymentService {
   @Value("${razorpay.key_secret}")
   private String keySecret;
 
-  public String createPaymentOrder(Double amount, String currency) throws RazorpayException {
+  public Map createPaymentOrder(Double amount, String currency) throws RazorpayException {
     try {
       RazorpayClient client = new RazorpayClient(keyId, keySecret);
 
@@ -39,8 +41,13 @@ public class PaymentService {
       log.info("Creating Razorpay order with payload: {}", options);
 
       Order order = client.orders.create(options);
-
-      return order.toString(); // Razorpay order response
+      Map<String, Object> response = new HashMap<>();
+      response.put("id", order.get("id"));
+      response.put("amount", order.get("amount"));
+      response.put("currency", order.get("currency"));
+      response.put("receipt", order.get("receipt"));
+      response.put("status", order.get("status"));
+      return response; // Razorpay order response
     } catch (RazorpayException e) {
       e.printStackTrace();
       throw new RuntimeException("Payment order creation failed");

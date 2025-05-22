@@ -7,6 +7,8 @@ import SignUpPage from './pages/SignUpPage';
 import VerifyPage from './pages/VerifyPage';
 import { AuthProvider } from './context/AuthContext';
 import CartPage from './pages/CartPage';
+import AddressPage from './pages/AddressPage';
+import OrderPage from './pages/OrderPage';
 
 const App: React.FC = () => {
   return (
@@ -20,6 +22,8 @@ const App: React.FC = () => {
             <Route path="/signup" element={<SignUpPage />} />
             <Route path="/verify" element={<VerifyPage />} />
             <Route path="/cart" element={<CartPage />} />
+            <Route path="/address" element={<AddressPage />} />
+            <Route path="/order" element={<OrderPage />} />
           </Routes>
         </div>
       </Router>
