@@ -19,11 +19,13 @@ import jakarta.transaction.Transactional;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class OrderService
 {
 
@@ -75,7 +77,8 @@ public class OrderService
     Order order = orderRepository.findById(orderId)
         .orElseThrow(() -> new ResourceNotFoundException("Order not found"));
 
-    if (!order.getId().equals(userId)) {
+    log.debug("Authenticated userId: {}, Order's userId: {}", userId, order.getUserId());
+    if (!order.getUserId().equals(userId)) {
       throw new UnauthorizedException("You cannot cancel this order.");
     }
 

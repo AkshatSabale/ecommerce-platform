@@ -9,6 +9,9 @@ import { AuthProvider } from './context/AuthContext';
 import CartPage from './pages/CartPage';
 import AddressPage from './pages/AddressPage';
 import OrderPage from './pages/OrderPage';
+import OrdersPage from './pages/OrdersPage';
+import OrderDetailsPage from './pages/OrderDetailsPage';
+import WishlistPage from './pages/WishlistPage'
 
 const App: React.FC = () => {
   return (
@@ -24,6 +27,9 @@ const App: React.FC = () => {
             <Route path="/cart" element={<CartPage />} />
             <Route path="/address" element={<AddressPage />} />
             <Route path="/order" element={<OrderPage />} />
+            <Route path="/orders" element={<OrdersPage />} />
+            <Route path="/orders/:orderId" element={<OrderDetailsPage />} />
+            <Route path="/wishlist" element={<WishlistPage />} />
           </Routes>
         </div>
       </Router>

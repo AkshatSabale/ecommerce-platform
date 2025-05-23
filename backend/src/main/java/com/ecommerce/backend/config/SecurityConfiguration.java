@@ -58,7 +58,7 @@ public class SecurityConfiguration {
   public CorsConfigurationSource corsConfigurationSource() {
     CorsConfiguration configuration = new CorsConfiguration();
     configuration.setAllowedOrigins(List.of("http://localhost:3000" ));//, "http://localhost:8081/swagger-ui/index.html#/")); //TODO: update backend url
-    configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE","OPTIONS"));
+    configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE","OPTIONS","PATCH"));
     configuration.setAllowedHeaders(List.of("Authorization", "Content-Type"));
     configuration.setAllowCredentials(true);
     configuration.setExposedHeaders(List.of("Authorization"));
