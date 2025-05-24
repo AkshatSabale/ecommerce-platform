@@ -10,6 +10,8 @@ interface Product {
   quantity: number;
   price: number;
   imageFilename: string;
+  averageRating?: number;
+  reviewCount?: number;
 }
 
 const ProductList: React.FC = () => {
@@ -18,16 +20,54 @@ const ProductList: React.FC = () => {
 
   const location = useLocation();
 
-  const fetchProducts = async (query: string = '') => {
-    try {
-      const response = query
-        ? await api.get<Product[]>(`/products/search?query=${encodeURIComponent(query)}`)
-        : await api.get<Product[]>('/products');
-      setProducts(response.data);
-    } catch (error) {
-      console.error('Error fetching products:', error);
-    }
-  };
+const fetchProducts = async (query: string = '') => {
+  try {
+    const response = query
+      ? await api.get<Product[]>(`/products/search?query=${encodeURIComponent(query)}`)
+      : await api.get<Product[]>('/products');
+
+    const productsWithRatings = await Promise.all(
+      response.data.map(async (product) => {
+        try {
+          const [avgRes, reviewsRes] = await Promise.all([
+            api.get<number>(`/reviews/product/${product.id}/average`),
+            api.get(`/reviews/product/${product.id}`),
+          ]);
+
+          return {
+            ...product,
+            averageRating: avgRes.data ?? 0,
+            reviewCount: reviewsRes.data.length,
+          };
+        } catch (e) {
+          return { ...product, averageRating: 0, reviewCount: 0 };
+        }
+      })
+    );
+
+    setProducts(productsWithRatings);
+  } catch (error) {
+    console.error('Error fetching products:', error);
+  }
+};
+
+const StarRating: React.FC<{ rating: number }> = ({ rating }) => {
+  const fullStars = Math.floor(rating);
+  const halfStar = rating % 1 >= 0.5;
+  const emptyStars = 5 - fullStars - (halfStar ? 1 : 0);
+
+  return (
+    <div className="flex items-center space-x-1">
+      {Array(fullStars).fill(null).map((_, i) => (
+        <span key={`full-${i}`} className="text-yellow-400">★</span>
+      ))}
+      {halfStar && <span className="text-yellow-400">☆</span>}
+      {Array(emptyStars).fill(null).map((_, i) => (
+        <span key={`empty-${i}`} className="text-gray-300">★</span>
+      ))}
+    </div>
+  );
+};
 
   // Effect runs whenever the URL changes
   useEffect(() => {
@@ -55,24 +95,30 @@ const ProductList: React.FC = () => {
 
       <ul className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {products.map((product) => (
-          <li key={product.id} className="border p-4 rounded">
-            <h2 className="text-xl font-semibold">{product.name}</h2>
-            <p className="mb-1">
-              Quantity: <span className="font-medium">{product.quantity}</span>
-            </p>
-            <p className="text-green-600 font-bold">${product.price}</p>
-            <button
-              onClick={() => handleAddToCart(product.id)}
-              className="mt-2 bg-blue-500 text-white px-4 py-2 rounded"
-            >
-              Add to Cart
-            </button>
-            <img
-              src={`http://localhost:8081/images/${product.imageFilename}`}
-              alt={product.name}
-              className="w-full h-48 object-cover"
-            />
-          </li>
+        <li key={product.id} className="border p-4 rounded">
+          <h2 className="text-xl font-semibold">{product.name}</h2>
+          <div className="flex items-center space-x-2 my-1">
+            <StarRating rating={product.averageRating || 0} />
+            <span className="text-sm text-gray-600">
+              {product.averageRating?.toFixed(1)}/5 ({product.reviewCount} reviews)
+            </span>
+          </div>
+          <p className="mb-1">
+            Quantity: <span className="font-medium">{product.quantity}</span>
+          </p>
+          <p className="text-green-600 font-bold">${product.price}</p>
+          <button
+            onClick={() => handleAddToCart(product.id)}
+            className="mt-2 bg-blue-500 text-white px-4 py-2 rounded"
+          >
+            Add to Cart
+          </button>
+          <img
+            src={`http://localhost:8081/images/${product.imageFilename}`}
+            alt={product.name}
+            className="w-full h-48 object-cover mt-2"
+          />
+        </li>
         ))}
       </ul>
 
