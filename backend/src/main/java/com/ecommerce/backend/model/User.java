@@ -4,6 +4,8 @@ package com.ecommerce.backend.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
+import java.util.HashSet;
+import java.util.Set;
 import lombok.Getter;
 import lombok.Setter;
 import org.springframework.security.core.GrantedAuthority;
@@ -11,8 +13,6 @@ import org.springframework.security.core.userdetails.UserDetails;
 
 import java.time.LocalDateTime;
 import java.util.Collection;
-import java.util.List;
-
 @Entity
 @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 @Table(name = "users")
@@ -35,6 +35,19 @@ public class User implements UserDetails {
   private LocalDateTime verificationCodeExpiresAt;
   private boolean enabled;
 
+  @ManyToMany(fetch = FetchType.EAGER)
+  @JoinTable(
+      name = "user_roles",
+      joinColumns = @JoinColumn(name = "user_id"),
+      inverseJoinColumns = @JoinColumn(name = "role_id")
+  )
+  private Set<Role> roles = new HashSet<>();
+
+  @Override
+  public Collection<? extends GrantedAuthority> getAuthorities() {
+    return roles;
+  }
+
   //constructor for creating an unverified user
   public User(String username, String email, String password) {
     this.username = username;
@@ -45,10 +58,6 @@ public class User implements UserDetails {
   public User(){
   }
 
-  @Override
-  public Collection<? extends GrantedAuthority> getAuthorities() {
-    return List.of();
-  }
 
   @Override
   public String getUsername() {

@@ -8,11 +8,13 @@ import org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfi
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 @SpringBootApplication(exclude = { SecurityAutoConfiguration.class })
 @EntityScan(basePackages = "com.ecommerce.backend.model")
+@EnableMethodSecurity
 public class BackendApplication {
 
 	public static void main(String[] args) {

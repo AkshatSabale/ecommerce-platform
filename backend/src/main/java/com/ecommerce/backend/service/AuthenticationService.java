@@ -5,7 +5,9 @@ package com.ecommerce.backend.service;
 import com.ecommerce.backend.dto.LoginUserDto;
 import com.ecommerce.backend.dto.RegisterUserDto;
 import com.ecommerce.backend.dto.VerifyUserDto;
+import com.ecommerce.backend.model.Role;
 import com.ecommerce.backend.model.User;
+import com.ecommerce.backend.repository.RoleRepository;
 import com.ecommerce.backend.repository.UserRepository;
 import jakarta.mail.MessagingException;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -23,17 +25,20 @@ public class AuthenticationService {
   private final PasswordEncoder passwordEncoder;
   private final AuthenticationManager authenticationManager;
   private final EmailService emailService;
+  private final RoleRepository roleRepository;
 
   public AuthenticationService(
       UserRepository userRepository,
       AuthenticationManager authenticationManager,
       PasswordEncoder passwordEncoder,
-      EmailService emailService
+      EmailService emailService,
+      RoleRepository roleRepository
   ) {
     this.authenticationManager = authenticationManager;
     this.userRepository = userRepository;
     this.passwordEncoder = passwordEncoder;
     this.emailService = emailService;
+    this.roleRepository = roleRepository;
   }
 
   public User signup(RegisterUserDto input) {
@@ -41,8 +46,14 @@ public class AuthenticationService {
     user.setVerificationCode(generateVerificationCode());
     user.setVerificationCodeExpiresAt(LocalDateTime.now().plusMinutes(15));
     user.setEnabled(false);
+
+    Role userRole = roleRepository.findByName("ROLE_CUSTOMER")
+        .orElseThrow(() -> new RuntimeException("Default role not found"));
+
+    user.getRoles().add(userRole);
+    User savedUser = userRepository.save(user);
     sendVerificationEmail(user);
-    return userRepository.save(user);
+    return savedUser;
   }
 
   public User authenticate(LoginUserDto input) {

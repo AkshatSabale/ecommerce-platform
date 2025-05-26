@@ -6,6 +6,7 @@ import com.ecommerce.backend.service.ProductService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,12 +35,14 @@ public class ProductController {
     }
 
     @PostMapping
+    @PreAuthorize("hasRole('ADMIN')")
     public Product create(@RequestBody Product product) {
         logger.info("Creating product:{}",product.getName());
         return repository.save(product);
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<String> delete(@RequestBody long id) {
         if (repository.existsById(id)) {
             repository.deleteById(id);
@@ -52,6 +55,7 @@ public class ProductController {
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<String> updateProduct(@PathVariable long id, @RequestBody Product updatedProduct) {
         return repository.findById(id)
             .map(product -> {

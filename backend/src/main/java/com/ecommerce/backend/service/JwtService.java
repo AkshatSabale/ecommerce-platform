@@ -7,10 +7,15 @@ import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 import java.security.Key;
+import java.util.Collections;
+import java.util.List;
+import java.util.stream.Collectors;
 import javax.crypto.SecretKey;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
+import org.springframework.security.core.GrantedAuthority;
 
 import java.util.Date;
 import java.util.HashMap;
@@ -42,10 +47,16 @@ public class JwtService {
     return buildToken(extraClaims, userDetails, jwtExpiration);
   }
 
-  //added for CartAPI
+  // Added for CartAPI & roles in JWT
   public String generateToken(User user) {
     Map<String, Object> extraClaims = new HashMap<>();
     extraClaims.put("userId", user.getId());
+
+    List<String> roles = user.getAuthorities().stream()
+        .map(GrantedAuthority::getAuthority)
+        .collect(Collectors.toList());
+    extraClaims.put("roles", roles);
+
     return generateToken(extraClaims, user);
   }
 
@@ -100,4 +111,34 @@ public class JwtService {
     final Claims claims = extractAllClaims(token);
     return claims.get("userId", Long.class);
   }
+
+  // New method: Extract roles from JWT token
+  public List<SimpleGrantedAuthority> extractRoles(String token) {
+    final Claims claims = extractAllClaims(token);
+    List<String> roles = claims.get("roles", List.class);
+    if (roles == null) {
+      return Collections.emptyList();
+    }
+    System.out.println("Roles in JWT: " + roles);
+    return roles.stream()
+        // add ROLE_ prefix for Spring Security
+        .map(role -> new SimpleGrantedAuthority(role))
+        .collect(Collectors.toList());
+  }
+
 }
+
+
+
+
+
+/*
+  private Claims extractAllClaims(String token) {
+    return Jwts
+        .parser()
+        .verifyWith(getSignInKey()) // key must be a SecretKey instance
+        .build()
+        .parseSignedClaims(token)
+        .getPayload();
+  }
+ */

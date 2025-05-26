@@ -8,9 +8,11 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import java.util.List;
 import org.springframework.lang.NonNull;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -50,16 +52,19 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     email = jwtService.extractUsername(jwt);
 
     if (email != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-      // FETCH USER FROM DATABASE
+      // Fetch user from DB (to validate user exists)
       User user = userRepository.findByUsername(email)
           .orElseThrow(() -> new RuntimeException("User not found with email: " + email));
 
       if (jwtService.isTokenValid(jwt, user)) {
+        // Extract roles from token claims
+        List<SimpleGrantedAuthority> authorities = jwtService.extractRoles(jwt);
+
         UsernamePasswordAuthenticationToken authToken =
             new UsernamePasswordAuthenticationToken(
                 user,
                 null,
-                user.getAuthorities()
+                authorities
             );
         authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
         SecurityContextHolder.getContext().setAuthentication(authToken);
@@ -69,14 +74,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     filterChain.doFilter(request, response);
   }
 
-
   @Override
   protected boolean shouldNotFilter(HttpServletRequest request) {
     String path = request.getServletPath();
     return path.startsWith("/auth/") ||
-        path.equals("/products/**") ||
-        path.equals("/products") ||
         path.startsWith("/swagger-ui/") ||
-        path.startsWith("/v3/api-docs/");
+        path.startsWith("/v3/api-docs/") ||
+        (path.startsWith("/products/"));
   }
 }
