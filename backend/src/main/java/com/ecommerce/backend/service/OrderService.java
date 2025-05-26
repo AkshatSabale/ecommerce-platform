@@ -3,6 +3,7 @@ package com.ecommerce.backend.service;
 import com.ecommerce.backend.dto.AddressDto;
 import com.ecommerce.backend.dto.OrderItemResponse;
 import com.ecommerce.backend.dto.OrderResponse;
+import com.ecommerce.backend.dto.ReturnRequestDto;
 import com.ecommerce.backend.exception.ResourceNotFoundException;
 import com.ecommerce.backend.exception.UnauthorizedException;
 import com.ecommerce.backend.model.Cart;
@@ -18,6 +19,7 @@ import com.ecommerce.backend.repository.UserRepository;
 import jakarta.transaction.Transactional;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -83,7 +85,48 @@ public class OrderService
     }
 
     order.setStatus(OrderStatus.CANCELLED); // If using status, otherwise delete
+    restockItems(order);
     orderRepository.save(order); // save the updated status
+  }
+
+  public boolean requestReturn(Long orderId, ReturnRequestDto returnRequest,Long userId) {
+    Optional<Order> optionalOrder = orderRepository.findById(orderId);
+    if (optionalOrder.isPresent()) {
+      Order order = optionalOrder.get();
+      if (order.getStatus() == OrderStatus.DELIVERED && order.getUserId().equals(userId)) {
+        order.setStatus(OrderStatus.RETURN_REQUESTED);
+        // Save return reason and timestamp if needed
+        orderRepository.save(order);
+        return true;
+      }
+    }
+    return false;
+  }
+
+  public boolean approveReturn(Long orderId) {
+    Optional<Order> optionalOrder = orderRepository.findById(orderId);
+    if (optionalOrder.isPresent()) {
+      Order order = optionalOrder.get();
+      if (order.getStatus() == OrderStatus.RETURN_REQUESTED) {
+        order.setStatus(OrderStatus.RETURNED);
+        orderRepository.save(order);
+        restockItems(order);
+        // Process refund if applicable
+        return true;
+      }
+    }
+    return false;
+  }
+
+  public void restockItems(Order order) {
+    for (OrderItem item : order.getOrderItems()) {
+      Optional<Product> optionalProduct = productRepository.findById(item.getProductId());
+      if (optionalProduct.isPresent()) {
+        Product product = optionalProduct.get();
+        product.setQuantity(product.getQuantity() + item.getQuantity());
+        productRepository.save(product);
+      }
+    }
   }
 
   @Transactional
