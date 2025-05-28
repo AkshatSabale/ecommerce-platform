@@ -14,68 +14,44 @@ import org.slf4j.LoggerFactory;
 import java.util.List;
 
 @RestController
-@RequestMapping("/products")
+@RequestMapping("/api/products")
 public class ProductController {
 
-    private final ProductRepository repository;
     private static final Logger logger = LoggerFactory.getLogger(ProductController.class);
+
     @Autowired
     private ProductService productService;
-
-
-
-    public ProductController(ProductRepository repository) {
-        this.repository = repository;
-    }
 
     @GetMapping
     public List<Product> getAll() {
         logger.info("Fetching all products");
-        return repository.findAll();
+        return productService.getAllProducts();
     }
 
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
     public Product create(@RequestBody Product product) {
-        logger.info("Creating product:{}",product.getName());
-        return repository.save(product);
+        logger.info("Creating product: {}", product.getName());
+        return productService.createProduct(product);
     }
 
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<String> delete(@RequestBody long id) {
-        if (repository.existsById(id)) {
-            repository.deleteById(id);
-            logger.info("Deleted product with id {}", id);
-            return ResponseEntity.ok("Deleted successfully");
-        } else {
-            logger.warn("Attempted to delete non-existent product id {}", id);
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Product not found");
-        }
+    public ResponseEntity<String> delete(@PathVariable long id) {
+        logger.info("Request to delete product with ID: {}", id);
+        return productService.deleteProduct(id);
     }
 
     @PutMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<String> updateProduct(@PathVariable long id, @RequestBody Product updatedProduct) {
-        return repository.findById(id)
-            .map(product -> {
-                product.setName(updatedProduct.getName());
-                product.setPrice(updatedProduct.getPrice());
-                product.setQuantity(updatedProduct.getQuantity());
-                product.setImageFilename(updatedProduct.getImageFilename());
-                repository.save(product);
-                logger.info("Product with ID:{} updated",id);
-                return ResponseEntity.ok("Product updated successfully");
-            })
-            .orElseGet(() -> {
-                logger.warn("Product with ID:{} not found for update", id);
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Product with ID " + id + " not found");
-            });
+        logger.info("Request to update product with ID: {}", id);
+        return productService.updateProduct(id, updatedProduct);
     }
 
     @GetMapping("/search")
     public List<Product> searchProducts(@RequestParam String query) {
+        logger.info("Searching products with query: {}", query);
         return productService.searchProducts(query);
     }
-
 }
