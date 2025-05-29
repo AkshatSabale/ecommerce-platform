@@ -12,7 +12,7 @@ const LoginPage: React.FC = () => {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const response = await api.post('/auth/login', { email, password });
+      const response = await api.post('/api/auth/login', { email, password });
       login(response.data.token); // Save token to context
       navigate('/'); // Redirect to homepage or dashboard
     } catch (err) {

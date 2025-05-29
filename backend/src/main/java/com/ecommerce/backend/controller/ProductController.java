@@ -30,9 +30,10 @@ public class ProductController {
 
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
-    public Product create(@RequestBody Product product) {
-        logger.info("Creating product: {}", product.getName());
-        return productService.createProduct(product);
+    public ResponseEntity<String> create(@RequestBody Product product) {
+        logger.info("Sending product to Kafka: {}", product.getName());
+        productService.createProductAsync(product);
+        return ResponseEntity.ok("Product creation request submitted.");
     }
 
     @DeleteMapping("/{id}")

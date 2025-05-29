@@ -1,4 +1,5 @@
 package com.ecommerce.backend.service;
+import com.ecommerce.backend.kafka.ProductProducer;
 import com.ecommerce.backend.model.Product;
 import com.ecommerce.backend.repository.ProductRepository;
 import java.util.List;
@@ -20,8 +21,12 @@ public class ProductService {
     return productRepository.findAll();
   }
 
-  public Product createProduct(Product product) {
-    return productRepository.save(product);
+  @Autowired
+  private ProductProducer productProducer;
+
+  @CacheEvict(value = "products", allEntries = true)
+  public void createProductAsync(Product product) {
+    productProducer.sendProduct(product);
   }
 
   public ResponseEntity<String> deleteProduct(long id) {

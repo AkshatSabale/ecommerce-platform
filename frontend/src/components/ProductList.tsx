@@ -23,8 +23,8 @@ const ProductList: React.FC = () => {
 const fetchProducts = async (query: string = '') => {
   try {
     const response = query
-      ? await api.get<Product[]>(`/products/search?query=${encodeURIComponent(query)}`)
-      : await api.get<Product[]>('/products');
+      ? await api.get<Product[]>(`/api/products/search?query=${encodeURIComponent(query)}`)
+      : await api.get<Product[]>('/api/products');
 
     const productsWithRatings = await Promise.all(
       response.data.map(async (product) => {
