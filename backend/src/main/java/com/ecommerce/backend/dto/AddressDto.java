@@ -1,5 +1,6 @@
 package com.ecommerce.backend.dto;
 
+import java.io.Serializable;
 import lombok.Data;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -10,7 +11,8 @@ import lombok.extern.slf4j.Slf4j;
 @Getter
 @Setter
 @NoArgsConstructor
-public class AddressDto {
+public class AddressDto implements Serializable
+{
 
   private String doorNumber;
   private String addressLine1;

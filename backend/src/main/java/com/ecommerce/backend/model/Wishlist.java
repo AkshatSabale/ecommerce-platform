@@ -21,9 +21,9 @@ public class Wishlist {
   private Long userId;
 
   /** just keep product IDs; no need for a join entity yet */
-  @ElementCollection
   @CollectionTable(name = "wishlist_products",
       joinColumns = @JoinColumn(name = "wishlist_id"))
   @Column(name = "product_id")
+  @ElementCollection(fetch = FetchType.EAGER)
   private Set<Long> productIds = new HashSet<>();
 }

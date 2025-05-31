@@ -1,4 +1,5 @@
 package com.ecommerce.backend.service;
+import com.ecommerce.backend.kafka.ProductMessage;
 import com.ecommerce.backend.kafka.ProductProducer;
 import com.ecommerce.backend.model.Product;
 import com.ecommerce.backend.repository.ProductRepository;
@@ -14,44 +15,40 @@ import org.springframework.stereotype.Service;
 public class ProductService {
 
   @Autowired
+  private ProductProducer productProducer;
+  @Autowired
   private ProductRepository productRepository;
 
-  @Cacheable(value = "products")
+  @Cacheable(value = "products", key = "'all'")
   public List<Product> getAllProducts() {
     return productRepository.findAll();
   }
 
-  @Autowired
-  private ProductProducer productProducer;
-
-  @CacheEvict(value = "products", allEntries = true)
+  @Cacheable(value = "products", key = "'all'")
   public void createProductAsync(Product product) {
-    productProducer.sendProduct(product);
+    ProductMessage message = new ProductMessage();
+    message.setOperation("CREATE");
+    message.setProduct(product);
+    productProducer.sendMessage(message);
   }
 
-  public ResponseEntity<String> deleteProduct(long id) {
-    if (productRepository.existsById(id)) {
-      productRepository.deleteById(id);
-      return ResponseEntity.ok("Deleted successfully");
-    } else {
-      return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Product not found");
-    }
-  }
-
-  @CacheEvict(value = "products", allEntries = true)
+  @CacheEvict(value = "products", key = "#id")
   public ResponseEntity<String> updateProduct(long id, Product updatedProduct) {
-    return productRepository.findById(id)
-        .map(product -> {
-          product.setName(updatedProduct.getName());
-          product.setPrice(updatedProduct.getPrice());
-          product.setQuantity(updatedProduct.getQuantity());
-          product.setImageFilename(updatedProduct.getImageFilename());
-          productRepository.save(product);
-          return ResponseEntity.ok("Product updated successfully");
-        })
-        .orElseGet(() ->
-            ResponseEntity.status(HttpStatus.NOT_FOUND).body("Product with ID " + id + " not found")
-        );
+    updatedProduct.setId(id); // Ensure ID is set
+    ProductMessage message = new ProductMessage();
+    message.setOperation("UPDATE");
+    message.setProduct(updatedProduct);
+    productProducer.sendMessage(message);
+    return ResponseEntity.ok("Product update request submitted.");
+  }
+
+  @CacheEvict(value = "products", key = "#id")
+  public ResponseEntity<String> deleteProduct(long id) {
+    ProductMessage message = new ProductMessage();
+    message.setOperation("DELETE");
+    message.setProductId(id);
+    productProducer.sendMessage(message);
+    return ResponseEntity.ok("Product delete request submitted.");
   }
 
   public List<Product> searchProducts(String searchTerm) {

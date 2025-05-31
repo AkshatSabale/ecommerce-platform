@@ -2,6 +2,8 @@ package com.ecommerce.backend.controller;
 
 import com.ecommerce.backend.dto.AddToCartRequest;
 import com.ecommerce.backend.dto.CartResponse;
+import com.ecommerce.backend.kafka.CartMessage;
+import com.ecommerce.backend.kafka.CartProducer;
 import com.ecommerce.backend.model.User;
 import com.ecommerce.backend.service.CartService;
 import com.ecommerce.backend.service.UserService;
@@ -30,37 +32,31 @@ public class CartController {
   }
 
   @PostMapping("/items")
-  public ResponseEntity<CartResponse> addToCart(
-      @RequestBody @Valid AddToCartRequest request) {
+  public ResponseEntity<Void> addToCart(@RequestBody @Valid AddToCartRequest request) {
     Long userId = getAuthenticatedUserId();
-    return ResponseEntity.ok(
-        cartService.addToCart(userId, request.getProductId(), request.getQuantity())
-    );
+    cartService.addToCart(userId, request.getProductId(), request.getQuantity());
+    return ResponseEntity.accepted().build();
   }
 
   @PutMapping("/items/{productId}")
-  public ResponseEntity<CartResponse> updateCartItem(
-      @PathVariable Long productId,
-      @RequestParam int quantity) {
+  public ResponseEntity<Void> updateCartItem(@PathVariable Long productId, @RequestParam int quantity) {
     Long userId = getAuthenticatedUserId();
-    return ResponseEntity.ok(
-        cartService.updateCartItem(userId, productId, quantity)
-    );
+    cartService.updateCartItem(userId, productId, quantity);
+    return ResponseEntity.accepted().build();
   }
 
   @DeleteMapping("/items/{productId}")
-  public ResponseEntity<Void> removeFromCart(
-      @PathVariable Long productId) {
+  public ResponseEntity<Void> removeFromCart(@PathVariable Long productId) {
     Long userId = getAuthenticatedUserId();
     cartService.removeFromCart(userId, productId);
-    return ResponseEntity.noContent().build();
+    return ResponseEntity.accepted().build();
   }
 
   @DeleteMapping
   public ResponseEntity<Void> clearCart() {
     Long userId = getAuthenticatedUserId();
     cartService.clearCart(userId);
-    return ResponseEntity.noContent().build();
+    return ResponseEntity.accepted().build();
   }
 
   private Long getAuthenticatedUserId() {

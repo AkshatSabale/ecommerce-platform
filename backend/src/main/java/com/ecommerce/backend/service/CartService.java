@@ -3,6 +3,8 @@ package com.ecommerce.backend.service;
 import com.ecommerce.backend.dto.CartItemDto;
 import com.ecommerce.backend.dto.CartResponse;
 import com.ecommerce.backend.exception.ResourceNotFoundException;
+import com.ecommerce.backend.kafka.CartMessage;
+import com.ecommerce.backend.kafka.CartProducer;
 import com.ecommerce.backend.model.Cart;
 import com.ecommerce.backend.model.CartItem;
 import com.ecommerce.backend.model.Product;
@@ -15,6 +17,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -24,80 +28,42 @@ public class CartService {
   private final CartRepository cartRepository;
   private final ProductRepository productRepository;
   private final UserRepository userRepository;
+  private final CartProducer cartProducer;
 
+  @Cacheable(value = "cart", key = "#userId")
   public CartResponse getCart(Long userId) {
     Cart cart = cartRepository.findByUserId(userId)
         .orElseGet(() -> createNewCart(userId));
     return mapToCartResponse(cart);
   }
 
-  public CartResponse addToCart(Long userId, Long productId, int quantity) {
-    Cart cart = getCartEntity(userId);
-    Product product = productRepository.findById(productId)
-        .orElseThrow(() -> new ResourceNotFoundException("Product not found"));
-
-    Optional<CartItem> existingItem = cart.getItems().stream()
-        .filter(item -> item.getProduct().getId().equals(productId))
-        .findFirst();
-
-    if (existingItem.isPresent()) {
-      existingItem.get().setQuantity(existingItem.get().getQuantity() + quantity);
-    } else {
-      CartItem newItem = new CartItem();
-      newItem.setCart(cart);
-      newItem.setProduct(product);
-      newItem.setQuantity(quantity);
-      cart.getItems().add(newItem);
-    }
-
-    cart.setUpdatedAt(LocalDateTime.now());
-    cart = cartRepository.save(cart);
-    return mapToCartResponse(cart);
+  @CacheEvict(value = "cart", key = "#userId")
+  public void addToCart(Long userId, Long productId, int quantity) {
+    cartProducer.sendMessage(new CartMessage(userId, "ADD", productId, quantity));
   }
 
-  public CartResponse updateCartItem(Long userId, Long productId, int quantity) {
-    if (quantity <= 0) {
-      throw new IllegalArgumentException("Quantity must be greater than 0");
-    }
-
-    Cart cart = getCartEntity(userId);
-    CartItem item = cart.getItems().stream()
-        .filter(i -> i.getProduct().getId().equals(productId))
-        .findFirst()
-        .orElseThrow(() -> new ResourceNotFoundException("Item not found in cart"));
-
-    item.setQuantity(quantity);
-    cart.setUpdatedAt(LocalDateTime.now());
-    cart = cartRepository.save(cart);
-    return mapToCartResponse(cart);
+  @CacheEvict(value = "cart", key = "#userId")
+  public void updateCartItem(Long userId, Long productId, int quantity) {
+    cartProducer.sendMessage(new CartMessage(userId, "UPDATE", productId, quantity));
   }
 
+  @CacheEvict(value = "cart", key = "#userId")
   public void removeFromCart(Long userId, Long productId) {
-    Cart cart = getCartEntity(userId);
-    cart.getItems().removeIf(item -> item.getProduct().getId().equals(productId));
-    cart.setUpdatedAt(LocalDateTime.now());
-    cartRepository.save(cart);
+    cartProducer.sendMessage(new CartMessage(userId, "REMOVE", productId, 0));
   }
 
+  @CacheEvict(value = "cart", key = "#userId")
   public void clearCart(Long userId) {
-    Cart cart = getCartEntity(userId);
-    cart.getItems().clear();
-    cart.setUpdatedAt(LocalDateTime.now());
-    cartRepository.save(cart);
+    cartProducer.sendMessage(new CartMessage(userId, "CLEAR", null, 0));
   }
 
+  @CacheEvict(value = "cart", key = "#userId")
   private Cart createNewCart(Long userId) {
     User user = userRepository.findById(userId)
         .orElseThrow(() -> new ResourceNotFoundException("User not found"));
-
     Cart newCart = new Cart();
     newCart.setUser(user);
     return cartRepository.save(newCart);
-  }
-
-  private Cart getCartEntity(Long userId) {
-    return cartRepository.findByUserId(userId)
-        .orElseThrow(() -> new ResourceNotFoundException("Cart not found"));
   }
 
   private CartResponse mapToCartResponse(Cart cart) {

@@ -20,7 +20,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/address")
+@RequestMapping("/api/address")
 public class AddressController {
 
   private final AddressService addressService;
@@ -47,8 +47,7 @@ public class AddressController {
   public ResponseEntity<?> addAddress(@RequestBody @Valid AddressResponse addressResponse) {
     try {
       Long userId = getAuthenticatedUserId();
-      addressService.addAddress(userId, addressResponse.getAddressLine1(), addressResponse.getAddressLine2(),
-          addressResponse.getCity(), addressResponse.getDoorNumber(), addressResponse.getPinCode());
+      addressService.addAddress(userId, addressResponse);
       return ResponseEntity.ok("Address added successfully.");
     } catch (IllegalStateException e) {
       return ResponseEntity.status(HttpStatus.CONFLICT).body(e.getMessage());

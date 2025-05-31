@@ -2,6 +2,9 @@ package com.ecommerce.backend.service;
 
 import com.ecommerce.backend.dto.ProductReviewRequest;
 import com.ecommerce.backend.dto.ProductReviewResponse;
+import com.ecommerce.backend.kafka.ProductReviewMessage;
+import com.ecommerce.backend.kafka.ProductReviewPayload;
+import com.ecommerce.backend.kafka.ProductReviewProducer;
 import com.ecommerce.backend.model.Product;
 import com.ecommerce.backend.model.ProductReview;
 import com.ecommerce.backend.model.User;
@@ -11,6 +14,8 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 import lombok.*;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 
@@ -19,44 +24,47 @@ import org.springframework.stereotype.Service;
 public class ProductReviewService {
 
   private final ProductReviewRepository reviewRepository;
-  private final ProductRepository productRepository;
-  private final UserService userService;
+  private final ProductReviewProducer reviewProducer;
 
+  @CacheEvict(value = {"productReviews", "productAverageRatings"}, key = "#request.productId")
   public ProductReviewResponse addOrUpdateReview(Long userId, ProductReviewRequest request) {
-    Product product = productRepository.findById(request.getProductId())
-        .orElseThrow(() -> new RuntimeException("Product not found"));
-    User user = userService.getUserById(userId);
+    ProductReviewMessage message = new ProductReviewMessage();
+    message.setOperation("CREATE_OR_UPDATE");
 
-    ProductReview review = reviewRepository.findByProductIdAndUserId(product.getId(), user.getId())
-        .orElse(new ProductReview());
+    ProductReviewPayload payload = new ProductReviewPayload(
+        request.getProductId(),
+        userId,
+        request.getRating(),
+        request.getComment()
+    );
 
-    review.setUser(user);
-    review.setProduct(product);
-    review.setRating(request.getRating());
-    review.setComment(request.getComment());
-    review.setUpdatedAt(LocalDateTime.now());
-    if (review.getCreatedAt() == null) {
-      review.setCreatedAt(LocalDateTime.now());
-    }
+    message.setReviewPayload(payload);
+    reviewProducer.sendMessage(message);
 
-    ProductReview savedReview = reviewRepository.save(review);
-    return mapToResponse(savedReview);
+    // Return immediately, or optionally you can return some optimistic response
+    return new ProductReviewResponse(); // Or throw unsupported for sync response
   }
 
+  @CacheEvict(value = {"productReviews", "productAverageRatings"}, key = "#productId")
   public void deleteReview(Long userId, Long productId) {
-    ProductReview review = reviewRepository.findByProductIdAndUserId(productId, userId)
-        .orElseThrow(() -> new RuntimeException("Review not found"));
-    reviewRepository.delete(review);
+    ProductReviewMessage message = new ProductReviewMessage();
+    message.setOperation("DELETE");
+    message.setProductId(productId);
+    message.setUserId(userId);
+    reviewProducer.sendMessage(message);
   }
 
+  @Cacheable(value = "productReviews", key = "#productId")
   public List<ProductReviewResponse> getReviewsForProduct(Long productId) {
     return reviewRepository.findAllByProductId(productId).stream()
         .map(this::mapToResponse)
         .collect(Collectors.toList());
   }
 
+  @Cacheable(value = "productAverageRatings", key = "#productId")
   public Double getAverageRatingForProduct(Long productId) {
-    return reviewRepository.findAverageRatingForProduct(productId);
+    Double avg = reviewRepository.findAverageRatingForProduct(productId);
+    return avg != null ? avg : 0.0;
   }
 
   private ProductReviewResponse mapToResponse(ProductReview review) {

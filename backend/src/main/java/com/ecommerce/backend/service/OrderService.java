@@ -6,6 +6,8 @@ import com.ecommerce.backend.dto.OrderResponse;
 import com.ecommerce.backend.dto.ReturnRequestDto;
 import com.ecommerce.backend.exception.ResourceNotFoundException;
 import com.ecommerce.backend.exception.UnauthorizedException;
+import com.ecommerce.backend.kafka.OrderMessage;
+import com.ecommerce.backend.kafka.OrderProducer;
 import com.ecommerce.backend.model.Cart;
 import com.ecommerce.backend.model.Order;
 import com.ecommerce.backend.model.OrderItem;
@@ -20,49 +22,35 @@ import jakarta.transaction.Transactional;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
 @Service
 @RequiredArgsConstructor
 @Slf4j
-public class OrderService
-{
+public class OrderService {
 
   private final OrderRepository orderRepository;
   private final UserRepository userRepository;
   private final CheckoutService checkoutService;
   private final UserService userService;
   private final ProductRepository productRepository;
+  private final OrderProducer orderProducer;
 
+  @Cacheable(value = "orders", key = "#userId")
   public List<OrderResponse> getOrder(Long userId) {
     List<Order> orders = orderRepository.findByUserId(userId);
-    List<OrderResponse> orderResponseList=new ArrayList<>();
     if (orders.isEmpty()) {
-     /* orderResponseList.add(createNewOrder(userId));
-      return orderResponseList; */
       throw new ResourceNotFoundException("Order", "userId", userId);
-    } else {
-      for (int i = 0; i <orders.size(); i++)
-      {
-        orderResponseList.add(mapToOrderResponse(orders.get(i)));
-      }
     }
-    return orderResponseList;
+    return orders.stream().map(this::mapToOrderResponse).collect(Collectors.toList());
   }
 
-  /*
-  private OrderResponse createNewOrder(Long userId) {
-    User user = userRepository.findById(userId)
-        .orElseThrow(() -> new ResourceNotFoundException("User not found"));
-
-    return checkoutService.checkout(userId, PaymentMethod.COD);
-  }
-
-   */
-
+  @Cacheable(value = "order", key = "#orderId")
   public OrderResponse getOrderById(Long userId, Long orderId) {
     Order order = orderRepository.findById(orderId)
         .orElseThrow(() -> new ResourceNotFoundException("Order not found with ID: " + orderId));
@@ -74,89 +62,43 @@ public class OrderService
     return mapToOrderResponse(order);
   }
 
-
   public void clearOrder(Long userId, Long orderId) {
-    Order order = orderRepository.findById(orderId)
-        .orElseThrow(() -> new ResourceNotFoundException("Order not found"));
-
-    log.debug("Authenticated userId: {}, Order's userId: {}", userId, order.getUserId());
-    if (!order.getUserId().equals(userId)) {
-      throw new UnauthorizedException("You cannot cancel this order.");
-    }
-
-    order.setStatus(OrderStatus.CANCELLED); // If using status, otherwise delete
-    restockItems(order);
-    orderRepository.save(order); // save the updated status
+    OrderMessage message = new OrderMessage();
+    message.setOperation("CANCEL");
+    message.setOrderId(orderId);
+    message.setUserId(userId);
+    orderProducer.sendMessage(message);
   }
 
-  public boolean requestReturn(Long orderId, ReturnRequestDto returnRequest,Long userId) {
-    Optional<Order> optionalOrder = orderRepository.findById(orderId);
-    if (optionalOrder.isPresent()) {
-      Order order = optionalOrder.get();
-      if (order.getStatus() == OrderStatus.DELIVERED && order.getUserId().equals(userId)) {
-        order.setStatus(OrderStatus.RETURN_REQUESTED);
-        // Save return reason and timestamp if needed
-        orderRepository.save(order);
-        return true;
-      }
-    }
-    return false;
+  public boolean requestReturn(Long orderId, ReturnRequestDto returnRequest, Long userId) {
+    OrderMessage message = new OrderMessage();
+    message.setOperation("RETURN_REQUEST");
+    message.setOrderId(orderId);
+    message.setUserId(userId);
+    message.setReturnRequest(returnRequest);
+    orderProducer.sendMessage(message);
+    return true; // Assuming the request will be processed successfully
   }
 
   public boolean approveReturn(Long orderId) {
-    Optional<Order> optionalOrder = orderRepository.findById(orderId);
-    if (optionalOrder.isPresent()) {
-      Order order = optionalOrder.get();
-      if (order.getStatus() == OrderStatus.RETURN_REQUESTED) {
-        order.setStatus(OrderStatus.RETURNED);
-        orderRepository.save(order);
-        restockItems(order);
-        // Process refund if applicable
-        return true;
-      }
-    }
-    return false;
-  }
-
-  public void restockItems(Order order) {
-    for (OrderItem item : order.getOrderItems()) {
-      Optional<Product> optionalProduct = productRepository.findById(item.getProductId());
-      if (optionalProduct.isPresent()) {
-        Product product = optionalProduct.get();
-        product.setQuantity(product.getQuantity() + item.getQuantity());
-        productRepository.save(product);
-      }
-    }
+    OrderMessage message = new OrderMessage();
+    message.setOperation("APPROVE_RETURN");
+    message.setOrderId(orderId);
+    orderProducer.sendMessage(message);
+    return true; // Assuming the approval will be processed successfully
   }
 
   @Transactional
   public OrderResponse confirmOrderAndDeductInventory(Long userId, Long orderId) {
+    OrderMessage message = new OrderMessage();
+    message.setOperation("CONFIRM");
+    message.setOrderId(orderId);
+    message.setUserId(userId);
+    orderProducer.sendMessage(message);
+
+    // Return a response immediately, actual processing will happen async
     Order order = orderRepository.findById(orderId)
         .orElseThrow(() -> new ResourceNotFoundException("Order not found with ID: " + orderId));
-
-    if (!order.getUserId().equals(userId)) {
-      throw new UnauthorizedException("You cannot confirm this order.");
-    }
-
-    if (order.getStatus() == OrderStatus.CONFIRMED) {
-      throw new IllegalStateException("Order already confirmed.");
-    }
-
-    for (OrderItem item : order.getOrderItems()) {
-      Product product = productRepository.findById(item.getProductId())
-          .orElseThrow(() -> new ResourceNotFoundException("Product not found"));
-
-      if (product.getQuantity() < item.getQuantity()) {
-        throw new RuntimeException("Insufficient stock for product: " + product.getName());
-      }
-
-      product.setQuantity(product.getQuantity() - item.getQuantity());
-      productRepository.save(product);
-    }
-
-    order.setStatus(OrderStatus.CONFIRMED); // or whatever status means "confirmed"
-    orderRepository.save(order);
-
     return mapToOrderResponse(order);
   }
 
@@ -183,7 +125,7 @@ public class OrderService
           oi.getProductId(),
           oi.getQuantity(),
           oi.getPrice(),
-      oi.getTotalPrice()
+          oi.getTotalPrice()
       );
       list.add(oir);
     }
@@ -191,4 +133,3 @@ public class OrderService
     return response;
   }
 }
-

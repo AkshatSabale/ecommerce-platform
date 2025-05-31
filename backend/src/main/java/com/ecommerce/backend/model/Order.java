@@ -24,7 +24,7 @@ public class Order {
   @Enumerated(EnumType.STRING)
   private OrderStatus status; // Enum like PENDING, CONFIRMED, SHIPPED, CANCELLED
 
-  @OneToMany(mappedBy = "order", cascade = CascadeType.ALL)
+  @OneToMany(mappedBy = "order", cascade = CascadeType.ALL,fetch = FetchType.EAGER)
   private List<OrderItem> orderItems = new ArrayList<>();
 
   private LocalDateTime createdAt;

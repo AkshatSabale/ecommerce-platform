@@ -26,35 +26,31 @@ public class ProductReviewController {
   private final ProductReviewService reviewService;
   private final UserService userService;
 
-  // 🔐 Authenticated - Add or update review
   @PostMapping
-  public ResponseEntity<ProductReviewResponse> addOrUpdateReview(@RequestBody @Valid ProductReviewRequest request) {
+  public ResponseEntity<String> addOrUpdateReview(@RequestBody @Valid ProductReviewRequest request) {
     Long userId = getAuthenticatedUserId();
-    return ResponseEntity.ok(reviewService.addOrUpdateReview(userId, request));
+    reviewService.addOrUpdateReview(userId, request);
+    return ResponseEntity.ok("Review submission request sent.");
   }
 
-  // 🔐 Authenticated - Delete review
   @DeleteMapping("/{productId}")
-  public ResponseEntity<Void> deleteReview(@PathVariable Long productId) {
+  public ResponseEntity<String> deleteReview(@PathVariable Long productId) {
     Long userId = getAuthenticatedUserId();
     reviewService.deleteReview(userId, productId);
-    return ResponseEntity.noContent().build();
+    return ResponseEntity.ok("Review deletion request sent.");
   }
 
-  // 🔓 Public - Get all reviews for a product
   @GetMapping("/product/{productId}")
   public ResponseEntity<List<ProductReviewResponse>> getReviewsForProduct(@PathVariable Long productId) {
     return ResponseEntity.ok(reviewService.getReviewsForProduct(productId));
   }
 
-  // 🔓 Public - Get average rating
   @GetMapping("/product/{productId}/average")
   public ResponseEntity<Double> getAverageRating(@PathVariable Long productId) {
     Double average = reviewService.getAverageRatingForProduct(productId);
-    return ResponseEntity.ok(average != null ? average : 0.0);
+    return ResponseEntity.ok(average);
   }
 
-  // Utility: used to fetch currently authenticated user ID
   private Long getAuthenticatedUserId() {
     Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
     if (authentication == null || !authentication.isAuthenticated()) {

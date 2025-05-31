@@ -14,11 +14,33 @@ public class ProductConsumer {
   private ProductRepository productRepository;
 
   @KafkaListener(topics = "product-topic", groupId = "product_group")
-  public void consume(String productJson) {
+  public void consume(String messageJson) {
     try {
       ObjectMapper mapper = new ObjectMapper();
-      Product product = mapper.readValue(productJson, Product.class);
-      productRepository.save(product);
+      ProductMessage message = mapper.readValue(messageJson, ProductMessage.class);
+
+      switch (message.getOperation()) {
+        case "CREATE":
+          productRepository.save(message.getProduct());
+          break;
+        case "UPDATE":
+          productRepository.findById(message.getProduct().getId()).ifPresent(product -> {
+            product.setName(message.getProduct().getName());
+            product.setPrice(message.getProduct().getPrice());
+            product.setQuantity(message.getProduct().getQuantity());
+            product.setImageFilename(message.getProduct().getImageFilename());
+            productRepository.save(product);
+          });
+          break;
+        case "DELETE":
+          if (message.getProductId() != null) {
+            productRepository.deleteById(message.getProductId());
+          }
+          break;
+        default:
+          System.out.println("Unknown operation: " + message.getOperation());
+      }
+
     } catch (Exception e) {
       e.printStackTrace();
     }

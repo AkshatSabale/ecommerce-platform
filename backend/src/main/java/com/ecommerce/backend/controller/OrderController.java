@@ -30,8 +30,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/order")
 @RequiredArgsConstructor
 @Slf4j
-public class OrderController
-{
+public class OrderController {
 
   private final UserService userService;
   private final OrderService orderService;
@@ -43,42 +42,31 @@ public class OrderController
   }
 
   @GetMapping("/{orderId}")
-  public ResponseEntity<OrderResponse> getCartById(
-      @PathVariable Long orderId )
-  {
+  public ResponseEntity<OrderResponse> getCartById(@PathVariable Long orderId) {
     Long userId = getAuthenticatedUserId();
-    return ResponseEntity.ok(orderService.getOrderById(userId,orderId));
+    return ResponseEntity.ok(orderService.getOrderById(userId, orderId));
   }
 
   @PatchMapping("/{orderId}/cancel")
-  public ResponseEntity<String> cancelOrder(
-    @PathVariable Long orderId )
-  {
+  public ResponseEntity<String> cancelOrder(@PathVariable Long orderId) {
     Long userId = getAuthenticatedUserId();
-    orderService.clearOrder(userId,orderId);
-    return ResponseEntity.noContent().build();
+    orderService.clearOrder(userId, orderId);
+    return ResponseEntity.accepted().body("Order cancellation request submitted.");
   }
 
   @PostMapping("/{orderId}/return")
-  public ResponseEntity<String> requestReturn(@PathVariable Long orderId, @RequestBody ReturnRequestDto returnRequest) {
+  public ResponseEntity<String> requestReturn(@PathVariable Long orderId,
+      @RequestBody ReturnRequestDto returnRequest) {
     Long userId = getAuthenticatedUserId();
-    boolean success = orderService.requestReturn(orderId, returnRequest,userId);
-    if (success) {
-      return ResponseEntity.ok("Return request submitted.");
-    } else {
-      return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Unable to process return request.");
-    }
+    orderService.requestReturn(orderId, returnRequest, userId);
+    return ResponseEntity.accepted().body("Return request submitted.");
   }
 
   @PreAuthorize("hasRole('ADMIN')")
   @PostMapping("/{orderId}/approve-return")
   public ResponseEntity<String> approveReturn(@PathVariable Long orderId) {
-    boolean success = orderService.approveReturn(orderId);
-    if (success) {
-      return ResponseEntity.ok("Return approved.");
-    } else {
-      return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Unable to approve return.");
-    }
+    orderService.approveReturn(orderId);
+    return ResponseEntity.accepted().body("Return approval request submitted.");
   }
 
   @PutMapping("/users/{userId}/orders/{orderId}/confirm")
@@ -86,7 +74,7 @@ public class OrderController
       @PathVariable Long userId,
       @PathVariable Long orderId) {
     OrderResponse response = orderService.confirmOrderAndDeductInventory(userId, orderId);
-    return ResponseEntity.ok(response);
+    return ResponseEntity.accepted().body(response);
   }
 
 
