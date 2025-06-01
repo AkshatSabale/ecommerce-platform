@@ -1,5 +1,6 @@
 package com.ecommerce.backend.controller;
 
+import com.ecommerce.backend.dto.ProductResponse;
 import com.ecommerce.backend.model.Product;
 import com.ecommerce.backend.repository.ProductRepository;
 import com.ecommerce.backend.service.ProductService;
@@ -27,6 +28,19 @@ public class ProductController {
         logger.info("Fetching all products");
         return productService.getAllProducts();
     }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<ProductResponse> getProductById(@PathVariable long id) {
+        logger.info("Fetching product with ID: {}", id);
+        ProductResponse response = productService.getProductById(id);
+
+        if (response.getName() == null) {
+            return ResponseEntity.notFound().build();
+        }
+
+        return ResponseEntity.ok(response);
+    }
+
 
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")

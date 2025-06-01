@@ -3,6 +3,8 @@ import { useLocation } from 'react-router-dom';
 import api from '../services/api';
 import { addToCart } from '../services/cartService';
 import Toast from './Toast';
+import { Link } from 'react-router-dom';
+import StarRating from './StarRating'
 
 interface Product {
   id: number;
@@ -51,23 +53,7 @@ const fetchProducts = async (query: string = '') => {
   }
 };
 
-const StarRating: React.FC<{ rating: number }> = ({ rating }) => {
-  const fullStars = Math.floor(rating);
-  const halfStar = rating % 1 >= 0.5;
-  const emptyStars = 5 - fullStars - (halfStar ? 1 : 0);
 
-  return (
-    <div className="flex items-center space-x-1">
-      {Array(fullStars).fill(null).map((_, i) => (
-        <span key={`full-${i}`} className="text-yellow-400">★</span>
-      ))}
-      {halfStar && <span className="text-yellow-400">☆</span>}
-      {Array(emptyStars).fill(null).map((_, i) => (
-        <span key={`empty-${i}`} className="text-gray-300">★</span>
-      ))}
-    </div>
-  );
-};
 
   // Effect runs whenever the URL changes
   useEffect(() => {
@@ -95,30 +81,32 @@ const StarRating: React.FC<{ rating: number }> = ({ rating }) => {
 
       <ul className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {products.map((product) => (
-        <li key={product.id} className="border p-4 rounded">
-          <h2 className="text-xl font-semibold">{product.name}</h2>
-          <div className="flex items-center space-x-2 my-1">
-            <StarRating rating={product.averageRating || 0} />
-            <span className="text-sm text-gray-600">
-              {product.averageRating?.toFixed(1)}/5 ({product.reviewCount} reviews)
-            </span>
-          </div>
-          <p className="mb-1">
-            Quantity: <span className="font-medium">{product.quantity}</span>
-          </p>
-          <p className="text-green-600 font-bold">${product.price}</p>
-          <button
-            onClick={() => handleAddToCart(product.id)}
-            className="mt-2 bg-blue-500 text-white px-4 py-2 rounded"
-          >
-            Add to Cart
-          </button>
-          <img
-            src={`http://localhost:8081/images/${product.imageFilename}`}
-            alt={product.name}
-            className="w-full h-48 object-cover mt-2"
-          />
-        </li>
+<li key={product.id} className="border p-4 rounded">
+  <Link to={`/products/${product.id}`} className="block">
+    <h2 className="text-xl font-semibold hover:text-blue-500">{product.name}</h2>
+    <div className="flex items-center space-x-2 my-1">
+      <StarRating rating={product.averageRating || 0} />
+      <span className="text-sm text-gray-600">
+        {product.averageRating?.toFixed(1)}/5 ({product.reviewCount} reviews)
+      </span>
+    </div>
+    <p className="mb-1">
+      Quantity: <span className="font-medium">{product.quantity}</span>
+    </p>
+    <p className="text-green-600 font-bold">${product.price}</p>
+    <img
+      src={`http://localhost:8081/images/${product.imageFilename}`}
+      alt={product.name}
+      className="w-full h-48 object-cover mt-2"
+    />
+  </Link>
+  <button
+    onClick={() => handleAddToCart(product.id)}
+    className="mt-2 bg-blue-500 text-white px-4 py-2 rounded"
+  >
+    Add to Cart
+  </button>
+</li>
         ))}
       </ul>
 

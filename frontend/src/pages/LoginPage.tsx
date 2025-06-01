@@ -13,7 +13,7 @@ const LoginPage: React.FC = () => {
     e.preventDefault();
     try {
       const response = await api.post('/api/auth/login', { email, password });
-      login(response.data.token); // Save token to context
+      login(response.data.token);
       navigate('/'); // Redirect to homepage or dashboard
     } catch (err) {
       alert('Login failed');
@@ -23,11 +23,27 @@ const LoginPage: React.FC = () => {
   return (
     <form onSubmit={handleLogin} className="p-4">
       <h2 className="text-xl font-bold mb-4">Login</h2>
-      <input value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Email" required className="block mb-2 p-2 border" />
-      <input value={password} onChange={(e) => setPassword(e.target.value)} type="password" placeholder="Password" required className="block mb-2 p-2 border" />
-      <button type="submit" className="bg-blue-500 text-white px-4 py-2">Login</button>
+      <input
+        value={email}
+        onChange={(e) => setEmail(e.target.value)}
+        placeholder="Email"
+        required
+        className="block mb-2 p-2 border"
+      />
+      <input
+        value={password}
+        onChange={(e) => setPassword(e.target.value)}
+        type="password"
+        placeholder="Password"
+        required
+        className="block mb-2 p-2 border"
+      />
+      <button type="submit" className="bg-blue-500 text-white px-4 py-2">
+        Login
+      </button>
       <p className="mt-2">
-        Don’t have an account? <a href="/signup" className="text-blue-600 underline">Sign up</a>
+        Don't have an account?{' '}
+        <a href="/signup" className="text-blue-600 underline">Sign up</a>
       </p>
     </form>
   );

@@ -1,4 +1,5 @@
 package com.ecommerce.backend.dto;
+import java.io.Serializable;
 import java.time.LocalDateTime;
 import lombok.*;
 
@@ -6,9 +7,7 @@ import lombok.*;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class ProductReviewResponse {
-  private Long id;
-  private Long productId;
+public class ProductReviewResponse implements Serializable {
   private String username;
   private int rating;
   private String comment;

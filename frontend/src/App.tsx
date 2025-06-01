@@ -12,6 +12,9 @@ import OrderPage from './pages/OrderPage';
 import OrdersPage from './pages/OrdersPage';
 import OrderDetailsPage from './pages/OrderDetailsPage';
 import WishlistPage from './pages/WishlistPage'
+import AdminRoute from './components/AdminRoute';
+import AdminDashboard from './pages/AdminDashboard';
+import ProductDetailPage from './pages/ProductDetailPage';
 
 const App: React.FC = () => {
   return (
@@ -30,6 +33,14 @@ const App: React.FC = () => {
             <Route path="/orders" element={<OrdersPage />} />
             <Route path="/orders/:orderId" element={<OrderDetailsPage />} />
             <Route path="/wishlist" element={<WishlistPage />} />
+            <Route path="/products/:id" element={<ProductDetailPage />} />
+            <Route path="/admin/*"
+              element={
+                <AdminRoute>
+                  <AdminDashboard />
+                </AdminRoute>
+              }
+            />
           </Routes>
         </div>
       </Router>

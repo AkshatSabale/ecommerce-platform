@@ -69,8 +69,6 @@ public class ProductReviewService {
 
   private ProductReviewResponse mapToResponse(ProductReview review) {
     return new ProductReviewResponse(
-        review.getId(),
-        review.getProduct().getId(),
         review.getUser().getUsername(),
         review.getRating(),
         review.getComment(),

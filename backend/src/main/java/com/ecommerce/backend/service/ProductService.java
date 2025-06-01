@@ -1,9 +1,11 @@
 package com.ecommerce.backend.service;
+import com.ecommerce.backend.dto.ProductResponse;
 import com.ecommerce.backend.kafka.ProductMessage;
 import com.ecommerce.backend.kafka.ProductProducer;
 import com.ecommerce.backend.model.Product;
 import com.ecommerce.backend.repository.ProductRepository;
 import java.util.List;
+import java.util.Optional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
@@ -30,6 +32,24 @@ public class ProductService {
     message.setOperation("CREATE");
     message.setProduct(product);
     productProducer.sendMessage(message);
+  }
+
+  @Cacheable(value ="products", key = "#id")
+  public ProductResponse getProductById(long id)
+  {
+    Optional<Product> p=productRepository.findById(id);
+    ProductResponse response=new ProductResponse();
+    if(p.isPresent())
+    {
+      response.setQuantity(p.get().getQuantity());
+      response.setName(p.get().getName());
+      response.setPrice(p.get().getPrice());
+      response.setDescription(p.get().getDescription());
+      response.setImageFilename(p.get().getImageFilename());
+      return response;
+    }
+    else
+      return response;
   }
 
   @CacheEvict(value = "products", key = "#id")

@@ -34,7 +34,7 @@ const AddressPage: React.FC = () => {
 
   const fetchAddress = async () => {
     try {
-      const res = await api.get('/address');
+      const res = await api.get('/api/address');
       setAddress(res.data);
       setHasAddress(true);
     } catch (err: any) {
@@ -50,7 +50,7 @@ const AddressPage: React.FC = () => {
 
   const handleSave = async () => {
     try {
-      await api.post('/address', address);
+      await api.post('/api/address', address);
       setHasAddress(true);
       showToast('Address saved successfully.');
     } catch (err: any) {
@@ -64,7 +64,7 @@ const AddressPage: React.FC = () => {
 
   const handleUpdate = async () => {
     try {
-      await api.put('/address', address);
+      await api.put('/api/address', address);
       showToast('Address updated successfully.');
     } catch (err: any) {
       showToast(err.response?.data || 'Failed to update address.');
@@ -73,7 +73,7 @@ const AddressPage: React.FC = () => {
 
   const handleDelete = async () => {
     try {
-      await api.delete('/address');
+      await api.delete('/api/address');
       setAddress({ doorNumber: '', addressLine1: '', addressLine2: '', pinCode: 0, city: '' });
       setHasAddress(false);
       showToast('Address deleted.');

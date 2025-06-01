@@ -1,6 +1,7 @@
 package com.ecommerce.backend.model;
 
 import jakarta.persistence.*;
+import java.io.Serializable;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -8,7 +9,7 @@ import lombok.Setter;
 @Getter
 @Entity
 @Table(name = "products")
-public class Product {
+public class Product implements Serializable {
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   private Long id;
