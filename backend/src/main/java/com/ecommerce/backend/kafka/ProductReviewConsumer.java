@@ -55,6 +55,9 @@ public class ProductReviewConsumer {
             review.setCreatedAt(LocalDateTime.now());
           }
 
+          if(user.getProductsPurchased().contains(product.getId()))
+            review.setVerifiedPurchase(true);
+
           reviewRepository.save(review);
 
           // Evict cache for this product's reviews and average rating

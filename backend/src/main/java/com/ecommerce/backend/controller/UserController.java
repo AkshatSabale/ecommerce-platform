@@ -2,7 +2,9 @@ package com.ecommerce.backend.controller;
 
 
 import com.ecommerce.backend.dto.LoginUserDto;
+import com.ecommerce.backend.exception.ResourceNotFoundException;
 import com.ecommerce.backend.model.User;
+import com.ecommerce.backend.repository.UserRepository;
 import com.ecommerce.backend.service.UserService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -12,6 +14,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -22,6 +25,7 @@ import java.util.List;
 @RestController
 public class UserController {
   private final UserService userService;
+  private UserRepository userRepository;
   public UserController(UserService userService) {
     this.userService = userService;
   }
@@ -51,5 +55,12 @@ public class UserController {
     UserDetails details = (UserDetails) auth.getPrincipal();
     List <User> users = userService.allUsers();
     return ResponseEntity.ok(users);
+  }
+
+  @GetMapping("/users/{userId}/purchased-products")
+  public ResponseEntity<List<Long>> getPurchasedProducts(@PathVariable Long userId) {
+    User user = userRepository.findById(userId)
+        .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+    return ResponseEntity.ok(user.getProductsPurchased());
   }
 }

@@ -3,6 +3,8 @@ import { useParams } from 'react-router-dom';
 import api from '../services/api';
 import StarRating from '../components/StarRating';
 import Toast from '../components/Toast';
+import VerifiedPurchaseBadge from '../components/VerifiedPurchaseBadge';
+import { useAuth } from '../context/AuthContext';
 
 interface ProductDetail {
   id: number;
@@ -17,9 +19,11 @@ interface ProductDetail {
 interface ProductReview {
   username: string;
   rating: number;
+  userId: number;
   comment: string;
   createdAt: string;
   updatedAt: string;
+  verifiedPurchase: boolean; // Add this field
 }
 
 const ProductDetailPage: React.FC = () => {
@@ -29,20 +33,19 @@ const ProductDetailPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const { userId } = useAuth();
 
   useEffect(() => {
     const fetchProductDetails = async () => {
       try {
         setLoading(true);
 
-        // Fetch product details
-        const productResponse = await api.get<ProductDetail>(`/api/products/${id}`);
-
-        // Fetch reviews in parallel
-        const reviewsResponse = await api.get<ProductReview[]>(`/reviews/product/${id}`);
-
-        // Fetch average rating
-        const avgRatingResponse = await api.get<number>(`/reviews/product/${id}/average`);
+        // Fetch all data in parallel
+        const [productResponse, reviewsResponse, avgRatingResponse] = await Promise.all([
+          api.get<ProductDetail>(`/api/products/${id}`),
+          api.get<ProductReview[]>(`/reviews/product/${id}`),
+          api.get<number>(`/reviews/product/${id}/average`)
+        ]);
 
         setProduct({
           ...productResponse.data,
@@ -151,7 +154,12 @@ const ProductDetailPage: React.FC = () => {
               <div key={index} className="border-b pb-4">
                 <div className="flex justify-between items-start">
                   <div>
-                    <h3 className="font-medium">{review.username}</h3>
+                    <div className="flex items-center">
+                      <h3 className="font-medium">{review.username}</h3>
+                      {review.verifiedPurchase && ( // Use the verifiedPurchase field
+                        <VerifiedPurchaseBadge />
+                      )}
+                    </div>
                     <div className="flex items-center space-x-1 mt-1">
                       <StarRating rating={review.rating} />
                       <span className="text-sm text-gray-500">

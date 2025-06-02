@@ -5,6 +5,7 @@ package com.ecommerce.backend.model;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import lombok.Getter;
 import lombok.Setter;
@@ -28,6 +29,8 @@ public class User implements UserDetails {
   private String email;
   @Column(nullable = false)
   private String password;
+
+  private List<Long> productsPurchased;
 
   @Column(name = "verification_code")
   private String verificationCode;

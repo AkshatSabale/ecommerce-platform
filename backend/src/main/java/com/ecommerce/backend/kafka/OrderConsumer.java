@@ -5,11 +5,16 @@ import com.ecommerce.backend.model.Order;
 import com.ecommerce.backend.model.OrderItem;
 import com.ecommerce.backend.model.OrderStatus;
 import com.ecommerce.backend.model.Product;
+import com.ecommerce.backend.model.User;
 import com.ecommerce.backend.repository.OrderRepository;
 import com.ecommerce.backend.repository.ProductRepository;
+import com.ecommerce.backend.repository.UserRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.nio.file.AccessDeniedException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.Optional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Component;
@@ -22,6 +27,8 @@ public class OrderConsumer {
 
   @Autowired
   private ProductRepository productRepository;
+
+  private  UserRepository userRepository;
 
   @KafkaListener(topics = "order-topic", groupId = "order_group")
   public void consume(String messageJson) {
@@ -66,6 +73,15 @@ public class OrderConsumer {
               productRepository.findById(item.getProductId()).ifPresent(product -> {
                 product.setQuantity(product.getQuantity() - item.getQuantity());
                 productRepository.save(product);
+                userRepository.findById(message.getUserId()).ifPresent(user -> {
+                  List<Long> list = user.getProductsPurchased();
+                  if (list == null) {
+                    list = new ArrayList<>();
+                    user.setProductsPurchased(list);
+                  }
+                  list.add(item.getProductId());
+                  userRepository.save(user); // Don't forget to save the user!
+                });
               });
             }
             orderRepository.save(order);

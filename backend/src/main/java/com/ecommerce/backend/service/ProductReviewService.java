@@ -69,11 +69,12 @@ public class ProductReviewService {
 
   private ProductReviewResponse mapToResponse(ProductReview review) {
     return new ProductReviewResponse(
-        review.getUser().getUsername(),
+            review.getUser().getUsername(),
         review.getRating(),
-        review.getComment(),
-        review.getCreatedAt(),
-        review.getUpdatedAt()
-    );
+            review.getComment(),
+            review.getCreatedAt(),
+            review.getUpdatedAt(),
+        Boolean.TRUE.equals(review.getVerifiedPurchase())
+        );
   }
 }

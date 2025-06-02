@@ -21,12 +21,12 @@ public class ProductService {
   @Autowired
   private ProductRepository productRepository;
 
-  @Cacheable(value = "products", key = "'all'")
+  @CacheEvict(value = "products", key = "{#id, 'all'}")
   public List<Product> getAllProducts() {
     return productRepository.findAll();
   }
 
-  @Cacheable(value = "products", key = "'all'")
+  @CacheEvict(value = "products", key = "{#id, 'all'}")
   public void createProductAsync(Product product) {
     ProductMessage message = new ProductMessage();
     message.setOperation("CREATE");

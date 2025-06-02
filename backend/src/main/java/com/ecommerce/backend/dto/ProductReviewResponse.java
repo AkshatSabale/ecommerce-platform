@@ -13,4 +13,5 @@ public class ProductReviewResponse implements Serializable {
   private String comment;
   private LocalDateTime createdAt;
   private LocalDateTime updatedAt;
+  private boolean verifiedPurchase;
 }

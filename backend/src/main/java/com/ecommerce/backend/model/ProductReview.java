@@ -1,6 +1,7 @@
 package com.ecommerce.backend.model;
 
 import jakarta.persistence.*;
+import java.io.Serializable;
 import java.time.LocalDateTime;
 import java.util.*;
 import lombok.Getter;
@@ -12,7 +13,7 @@ import lombok.Setter;
 })
 @Getter
 @Setter
-public class ProductReview {
+public class ProductReview implements Serializable {
 
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -32,4 +33,7 @@ public class ProductReview {
 
   private LocalDateTime createdAt = LocalDateTime.now();
   private LocalDateTime updatedAt = LocalDateTime.now();
+
+  @Column(nullable = false)
+  private Boolean verifiedPurchase=false;
 }

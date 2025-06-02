@@ -6,6 +6,7 @@ interface AuthContextType {
   isAuthenticated: boolean;
   isAdmin: boolean;
   loading: boolean;
+  userId: string | null;
   login: (token: string) => void;
   logout: () => void;
 }
@@ -15,6 +16,7 @@ const AuthContext = createContext<AuthContextType>({
   isAuthenticated: false,
   isAdmin: false,
   loading: true,
+  userId: null,
   login: () => {},
   logout: () => {}
 });
@@ -22,14 +24,16 @@ const AuthContext = createContext<AuthContextType>({
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [token, setToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [userId, setUserId] = useState<string | null>(null);
 
   // Initialize from localStorage
   useEffect(() => {
     const storedToken = localStorage.getItem('jwtToken');
     if (storedToken) {
       try {
-        const decoded = jwtDecode<{ roles?: string[] }>(storedToken);
+        const decoded = jwtDecode<{ sub: string; roles?: string[] }>(storedToken);
         setToken(storedToken);
+        setUserId(decoded.sub);
       } catch (error) {
         localStorage.removeItem('jwtToken');
       }
@@ -57,6 +61,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     isAuthenticated,
     isAdmin,
     loading,
+    userId,
     login,
     logout
   };
