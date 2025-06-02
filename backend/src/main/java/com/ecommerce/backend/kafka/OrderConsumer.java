@@ -59,9 +59,16 @@ public class OrderConsumer {
             orderRepository.save(order);
           });
           break;
-        case "APPROVE_RETURN":
+        case "COMPLETE_RETURN":
           orderRepository.findById(message.getOrderId()).ifPresent(order -> {
             order.setStatus(OrderStatus.RETURNED);
+            restockItems(order);
+            orderRepository.save(order);
+          });
+          break;
+        case "APPROVE_RETURN":
+          orderRepository.findById(message.getOrderId()).ifPresent(order -> {
+            order.setStatus(OrderStatus.RETURN_APPROVED);
             restockItems(order);
             orderRepository.save(order);
           });
@@ -96,6 +103,12 @@ public class OrderConsumer {
   }
 
   private void restockItems(Order order) {
+    // Only restock if order was in a state where items were deducted
+    if (order.getStatus() == OrderStatus.CANCELLED ||
+        order.getStatus() == OrderStatus.RETURNED) {
+      return; // Already restocked
+    }
+
     for (OrderItem item : order.getOrderItems()) {
       productRepository.findById(item.getProductId()).ifPresent(product -> {
         product.setQuantity(product.getQuantity() + item.getQuantity());

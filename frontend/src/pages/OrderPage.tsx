@@ -30,7 +30,7 @@ const OrderPage: React.FC = () => {
   // Fetch address when checkbox is checked
   useEffect(() => {
     if (useSavedAddress) {
-      api.get('/address')
+      api.get('/api/address')
         .then(response => {
           setAddress(response.data);
         })

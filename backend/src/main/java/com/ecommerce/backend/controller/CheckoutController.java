@@ -31,7 +31,7 @@ public class CheckoutController
   @PostMapping
   public ResponseEntity<OrderResponse> checkout(@RequestBody CheckoutRequest request)
   {
-    // Here you will hardcode userId for now (until auth comes)
+
     Long userId = getAuthenticatedUserId();
     System.out.println("Checkout request received: " + request);
     OrderResponse orderResponse = checkoutService.checkout(userId, request);

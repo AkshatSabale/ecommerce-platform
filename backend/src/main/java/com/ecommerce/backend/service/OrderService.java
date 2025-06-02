@@ -102,6 +102,30 @@ public class OrderService {
     return mapToOrderResponse(order);
   }
 
+  public Order getOrderEntityById(Long userId, Long orderId) {
+    Order order = orderRepository.findById(orderId)
+        .orElseThrow(() -> new ResourceNotFoundException("Order not found with ID: " + orderId));
+
+    if (!order.getUserId().equals(userId)) {
+      throw new UnauthorizedException("You cannot access this order.");
+    }
+
+    return order;
+  }
+
+  public Order getOrderEntityById(Long orderId) {
+    return orderRepository.findById(orderId)
+        .orElseThrow(() -> new ResourceNotFoundException("Order not found with ID: " + orderId));
+  }
+
+  public boolean completeReturn(Long orderId) {
+    OrderMessage message = new OrderMessage();
+    message.setOperation("COMPLETE_RETURN");
+    message.setOrderId(orderId);
+    orderProducer.sendMessage(message);
+    return true;
+  }
+
   private OrderResponse mapToOrderResponse(Order order) {
     // You need to define this mapper.
     OrderResponse response = new OrderResponse();
@@ -109,6 +133,7 @@ public class OrderService {
     response.setStatus(order.getStatus());
     response.setTotalAmount(order.getTotalAmount());
     response.setPaymentMethod(order.getPaymentMethod());
+    response.setCreatedAt(order.getCreatedAt());
 
     AddressDto addressDto=new AddressDto();
     addressDto.setDoorNumber(order.getDoorNumber());

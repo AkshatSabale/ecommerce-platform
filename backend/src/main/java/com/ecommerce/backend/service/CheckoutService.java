@@ -6,11 +6,14 @@ import com.ecommerce.backend.dto.CartResponse;
 import com.ecommerce.backend.dto.CheckoutRequest;
 import com.ecommerce.backend.dto.OrderItemResponse;
 import com.ecommerce.backend.dto.OrderResponse;
+import com.ecommerce.backend.exception.ResourceNotFoundException;
 import com.ecommerce.backend.model.Order;
 import com.ecommerce.backend.model.OrderItem;
 import com.ecommerce.backend.model.OrderStatus;
+import com.ecommerce.backend.model.Product;
 import com.ecommerce.backend.repository.CartRepository;
 import com.ecommerce.backend.repository.OrderRepository;
+import com.ecommerce.backend.repository.ProductRepository;
 import com.ecommerce.backend.repository.UserRepository;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -27,6 +30,7 @@ public class CheckoutService {
   private final CartRepository cartRepository;
   private final UserRepository userRepository;
   private final OrderRepository orderRepository;
+  private final ProductRepository productRepository;
 
   public OrderResponse checkout(Long userId, CheckoutRequest request) {
     // Step 1: Get Cart
@@ -41,6 +45,17 @@ public class CheckoutService {
     double totalAmount = 0.0;
 
     for (CartItemDto cartItem : cartResponse.getItems()) {
+      // Deduct stock immediately
+      Product product = productRepository.findById(cartItem.getProductId())
+          .orElseThrow(() -> new ResourceNotFoundException("Product not found"));
+
+      if (product.getQuantity() < cartItem.getQuantity()) {
+        throw new IllegalStateException("Insufficient stock for product: " + product.getId());
+      }
+
+      product.setQuantity(product.getQuantity() - cartItem.getQuantity());
+      productRepository.save(product);
+
       OrderItem orderItem = new OrderItem();
       orderItem.setProductId(cartItem.getProductId());
       orderItem.setQuantity(cartItem.getQuantity());
@@ -100,7 +115,8 @@ public class CheckoutService {
         savedOrder.getStatus(),
         savedOrder.getTotalAmount(),
         savedOrder.getPaymentMethod(),
-        addressDto
+        addressDto,
+        savedOrder.getCreatedAt()
     );
   }
 }

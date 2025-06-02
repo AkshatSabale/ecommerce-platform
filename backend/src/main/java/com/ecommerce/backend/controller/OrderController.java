@@ -4,6 +4,8 @@ package com.ecommerce.backend.controller;
 import com.ecommerce.backend.dto.CartResponse;
 import com.ecommerce.backend.dto.OrderResponse;
 import com.ecommerce.backend.dto.ReturnRequestDto;
+import com.ecommerce.backend.model.Order;
+import com.ecommerce.backend.model.OrderStatus;
 import com.ecommerce.backend.model.User;
 import com.ecommerce.backend.service.OrderService;
 import com.ecommerce.backend.service.UserService;
@@ -50,6 +52,15 @@ public class OrderController {
   @PatchMapping("/{orderId}/cancel")
   public ResponseEntity<String> cancelOrder(@PathVariable Long orderId) {
     Long userId = getAuthenticatedUserId();
+    Order order = orderService.getOrderEntityById(userId, orderId);
+
+    // Validate order can be cancelled
+    if (!order.getStatus().equals(OrderStatus.PENDING) &&
+        !order.getStatus().equals(OrderStatus.CONFIRMED) &&
+        !order.getStatus().equals(OrderStatus.SHIPPED)) {
+      throw new IllegalStateException("Order cannot be cancelled in its current state");
+    }
+
     orderService.clearOrder(userId, orderId);
     return ResponseEntity.accepted().body("Order cancellation request submitted.");
   }
@@ -58,8 +69,28 @@ public class OrderController {
   public ResponseEntity<String> requestReturn(@PathVariable Long orderId,
       @RequestBody ReturnRequestDto returnRequest) {
     Long userId = getAuthenticatedUserId();
+    Order order = orderService.getOrderEntityById(userId, orderId);
+
+    // Validate order can be returned
+    if (!order.getStatus().equals(OrderStatus.DELIVERED)) {
+      throw new IllegalStateException("Only delivered orders can be returned");
+    }
+
     orderService.requestReturn(orderId, returnRequest, userId);
     return ResponseEntity.accepted().body("Return request submitted.");
+  }
+
+  @PreAuthorize("hasRole('ADMIN')")
+  @PostMapping("/{orderId}/complete-return")
+  public ResponseEntity<String> completeReturn(@PathVariable Long orderId) {
+    Order order = orderService.getOrderEntityById(orderId);
+
+    if (!order.getStatus().equals(OrderStatus.RETURN_APPROVED)) {
+      throw new IllegalStateException("Only approved returns can be completed");
+    }
+
+    orderService.completeReturn(orderId);
+    return ResponseEntity.accepted().body("Return completed successfully.");
   }
 
   @PreAuthorize("hasRole('ADMIN')")

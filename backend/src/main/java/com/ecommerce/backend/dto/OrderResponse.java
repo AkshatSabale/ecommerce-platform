@@ -3,6 +3,7 @@ package com.ecommerce.backend.dto;
 import com.ecommerce.backend.model.OrderStatus;
 import com.ecommerce.backend.model.PaymentMethod;
 import java.io.Serializable;
+import java.time.LocalDateTime;
 import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -19,4 +20,5 @@ public class OrderResponse implements Serializable
   private Double totalAmount;
   private PaymentMethod paymentMethod;
   private AddressDto addressDto;
+  private LocalDateTime createdAt;
 }
