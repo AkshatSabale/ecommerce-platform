@@ -1,64 +1,108 @@
 package com.ecommerce.backend.controller;
 
+import com.ecommerce.backend.dto.RazorpayOrderResponseDTO;
+import com.ecommerce.backend.model.Payment;
+import com.ecommerce.backend.model.User;
 import com.ecommerce.backend.service.PaymentService;
-import java.util.Map;
+import com.ecommerce.backend.service.UserService;
+import com.razorpay.RazorpayException;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
-import org.json.JSONObject;
-import org.springframework.beans.factory.annotation.Value;
+
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.RestController;
+
 @RestController
+@RequestMapping("/payments")
 @RequiredArgsConstructor
-@RequestMapping("/payment")
+@Slf4j
 public class PaymentController {
 
   private final PaymentService paymentService;
+  private final UserService userService;
 
-  @PostMapping("/create")
-  public ResponseEntity<?> createOrder(@RequestParam Double amount) {
+  @PostMapping
+  public ResponseEntity<?> createPaymentOrder(
+      @RequestParam Double amount,
+      @RequestParam String currency) {
+    Long userId = getAuthenticatedUserId();
     try {
-      Map razorpayOrder = paymentService.createPaymentOrder(amount, "INR");
-      return ResponseEntity.ok(razorpayOrder);
+      Payment payment = paymentService.createAndSavePaymentOrder(amount, currency, userId);
+      return ResponseEntity.ok(new RazorpayOrderResponseDTO(payment));
     } catch (Exception e) {
       return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-          .body("Payment order creation failed");
+          .body("Payment order creation failed: " + e.getMessage());
+    }
+  }
+  @GetMapping("/{paymentId}")
+  public ResponseEntity<?> getPayment(@PathVariable String paymentId) {
+    Long userId = getAuthenticatedUserId();
+    try {
+      Payment payment = paymentService.getPaymentForUser(paymentId, userId);
+      return ResponseEntity.ok(payment);
+    } catch (Exception e) {
+      return ResponseEntity.status(HttpStatus.NOT_FOUND)
+          .body("Payment not found or access denied");
+    }
+  }
+
+  @GetMapping("/user")
+  public ResponseEntity<?> getUserPayments() {
+    Long userId = getAuthenticatedUserId();
+    try {
+      List<Payment> payments = paymentService.getPaymentsByUser(userId);
+      return ResponseEntity.ok(payments);
+    } catch (Exception e) {
+      return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+          .body("Failed to fetch payments");
     }
   }
 
 
-  @GetMapping("/details/{paymentId}")
-  public ResponseEntity<?> getPaymentDetails(@PathVariable String paymentId) {
+  @PostMapping("/webhook")
+  public ResponseEntity<?> handleWebhook(
+      @RequestBody String payload,
+      @RequestHeader("X-Razorpay-Signature") String signature) {
     try {
-      String details = paymentService.getPaymentDetails(paymentId);
-      return ResponseEntity.ok(details);
+      paymentService.handleWebhookEvent(payload, signature);
+      return ResponseEntity.ok().build();
     } catch (Exception e) {
-      return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-          .body("Failed to fetch payment details");
-    }
-  }
-
-  @PostMapping("/refund")
-  public ResponseEntity<?> refundPayment(
-      @RequestParam String paymentId,
-      @RequestParam int amount) {
-    try {
-      String refund = paymentService.refundPayment(paymentId, amount);
-      return ResponseEntity.ok(refund);
-    } catch (Exception e) {
-      return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-          .body("Refund failed");
+      return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
     }
   }
 
   @PostMapping("/verify")
-  public ResponseEntity<Boolean> verifySignature(
+  public ResponseEntity<Boolean> verifyPayment(
       @RequestParam String orderId,
       @RequestParam String paymentId,
-      @RequestParam String signature) {
-    boolean verified = paymentService.verifySignature(orderId, paymentId, signature);
+      @RequestParam String signature) throws RazorpayException {
+    Long userId = getAuthenticatedUserId();
+    boolean verified = paymentService.verifyAndCompletePayment(orderId, paymentId, signature, userId);
     return ResponseEntity.ok(verified);
   }
 
+  private Long getAuthenticatedUserId() {
+    Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
+    if (authentication == null || !authentication.isAuthenticated()) {
+      throw new SecurityException("User not authenticated");
+    }
+
+    Object principal = authentication.getPrincipal();
+    if (!(principal instanceof UserDetails)) {
+      throw new SecurityException("Invalid authentication principal");
+    }
+
+    String username = ((UserDetails) principal).getUsername();
+    User user = userService.getUserByUserName(username);
+
+    return user.getId();
+  }
 }

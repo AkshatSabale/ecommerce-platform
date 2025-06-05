@@ -11,6 +11,7 @@ import lombok.Setter;
 public class CheckoutRequest {
   private PaymentMethod paymentMethod;
   private AddressDto address;
-
+  private String paymentId;
+  private String orderId;
 
 }

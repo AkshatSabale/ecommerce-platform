@@ -59,6 +59,37 @@ public class OrderConsumer {
             orderRepository.save(order);
           });
           break;
+        case "CONFIRM_ORDER":
+          orderRepository.findById(message.getOrderId()).ifPresent(order -> {
+            order.setStatus(OrderStatus.CONFIRMED);
+            restockItems(order);
+            orderRepository.save(order);
+          });
+          break;
+        case "SHIP_ORDER":
+          orderRepository.findById(message.getOrderId()).ifPresent(order -> {
+            order.setStatus(OrderStatus.SHIPPED);
+            orderRepository.save(order);
+          });
+          break;
+        case "DELIVER_ORDER":
+          orderRepository.findById(message.getOrderId()).ifPresent(order -> {
+            order.setStatus(OrderStatus.DELIVERED);
+            for (OrderItem item : order.getOrderItems()) {
+              productRepository.findById(item.getProductId())
+                  .flatMap(product -> userRepository.findById(message.getUserId()))
+                  .ifPresent(user -> {
+                    List<Long> list = user.getProductsPurchased();
+                    if (list == null) {
+                      list = new ArrayList<>();
+                      user.setProductsPurchased(list);
+                    }
+                    list.add(item.getProductId());
+                    userRepository.save(user); // Don't forget to save the user!
+                  });
+            }
+            orderRepository.save(order);
+          });
         case "COMPLETE_RETURN":
           orderRepository.findById(message.getOrderId()).ifPresent(order -> {
             order.setStatus(OrderStatus.RETURNED);
@@ -69,28 +100,6 @@ public class OrderConsumer {
         case "APPROVE_RETURN":
           orderRepository.findById(message.getOrderId()).ifPresent(order -> {
             order.setStatus(OrderStatus.RETURN_APPROVED);
-            restockItems(order);
-            orderRepository.save(order);
-          });
-          break;
-        case "CONFIRM":
-          orderRepository.findById(message.getOrderId()).ifPresent(order -> {
-            order.setStatus(OrderStatus.CONFIRMED);
-            for (OrderItem item : order.getOrderItems()) {
-              productRepository.findById(item.getProductId()).ifPresent(product -> {
-                product.setQuantity(product.getQuantity() - item.getQuantity());
-                productRepository.save(product);
-                userRepository.findById(message.getUserId()).ifPresent(user -> {
-                  List<Long> list = user.getProductsPurchased();
-                  if (list == null) {
-                    list = new ArrayList<>();
-                    user.setProductsPurchased(list);
-                  }
-                  list.add(item.getProductId());
-                  userRepository.save(user); // Don't forget to save the user!
-                });
-              });
-            }
             orderRepository.save(order);
           });
           break;
@@ -103,16 +112,18 @@ public class OrderConsumer {
   }
 
   private void restockItems(Order order) {
-    // Only restock if order was in a state where items were deducted
-    if (order.getStatus() == OrderStatus.CANCELLED ||
-        order.getStatus() == OrderStatus.RETURNED) {
-      return; // Already restocked
-    }
-
     for (OrderItem item : order.getOrderItems()) {
       productRepository.findById(item.getProductId()).ifPresent(product -> {
-        product.setQuantity(product.getQuantity() + item.getQuantity());
-        productRepository.save(product);
+        if (order.getStatus() == OrderStatus.CANCELLED ||
+            order.getStatus() == OrderStatus.RETURNED) {
+          product.setQuantity(product.getQuantity() + item.getQuantity());
+          productRepository.save(product);
+        }
+        else if(order.getStatus() == OrderStatus.CONFIRMED)
+        {
+          product.setQuantity(product.getQuantity() - item.getQuantity());
+          productRepository.save(product);
+        }
       });
     }
   }

@@ -25,7 +25,12 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.CachePut;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
@@ -41,7 +46,7 @@ public class OrderService {
   private final ProductRepository productRepository;
   private final OrderProducer orderProducer;
 
-  @Cacheable(value = "orders", key = "#userId")
+
   public List<OrderResponse> getOrder(Long userId) {
     List<Order> orders = orderRepository.findByUserId(userId);
     if (orders.isEmpty()) {
@@ -50,7 +55,8 @@ public class OrderService {
     return orders.stream().map(this::mapToOrderResponse).collect(Collectors.toList());
   }
 
-  @Cacheable(value = "order", key = "#orderId")
+
+
   public OrderResponse getOrderById(Long userId, Long orderId) {
     Order order = orderRepository.findById(orderId)
         .orElseThrow(() -> new ResourceNotFoundException("Order not found with ID: " + orderId));
@@ -62,6 +68,20 @@ public class OrderService {
     return mapToOrderResponse(order);
   }
 
+  public List<OrderResponse> getAllOrders(OrderStatus status, Pageable pageable) {
+    Page<Order> orders;
+    if (status != null) {
+      orders = orderRepository.findByStatus(status, pageable);
+    } else {
+      orders = orderRepository.findAll(pageable);
+    }
+
+    return orders.stream()
+        .map(this::mapToOrderResponse)
+        .collect(Collectors.toList());
+  }
+
+
   public void clearOrder(Long userId, Long orderId) {
     OrderMessage message = new OrderMessage();
     message.setOperation("CANCEL");
@@ -69,6 +89,7 @@ public class OrderService {
     message.setUserId(userId);
     orderProducer.sendMessage(message);
   }
+
 
   public boolean requestReturn(Long orderId, ReturnRequestDto returnRequest, Long userId) {
     OrderMessage message = new OrderMessage();
@@ -80,6 +101,7 @@ public class OrderService {
     return true; // Assuming the request will be processed successfully
   }
 
+
   public boolean approveReturn(Long orderId) {
     OrderMessage message = new OrderMessage();
     message.setOperation("APPROVE_RETURN");
@@ -88,7 +110,7 @@ public class OrderService {
     return true; // Assuming the approval will be processed successfully
   }
 
-  @Transactional
+
   public OrderResponse confirmOrderAndDeductInventory(Long userId, Long orderId) {
     OrderMessage message = new OrderMessage();
     message.setOperation("CONFIRM");
@@ -118,6 +140,7 @@ public class OrderService {
         .orElseThrow(() -> new ResourceNotFoundException("Order not found with ID: " + orderId));
   }
 
+
   public boolean completeReturn(Long orderId) {
     OrderMessage message = new OrderMessage();
     message.setOperation("COMPLETE_RETURN");
@@ -125,6 +148,59 @@ public class OrderService {
     orderProducer.sendMessage(message);
     return true;
   }
+
+
+  public OrderResponse confirmOrder(Long orderId, OrderStatus newStatus) {
+    Order order = orderRepository.findById(orderId)
+        .orElseThrow(() -> new ResourceNotFoundException("Order not found with ID: " + orderId));
+
+    order.setStatus(newStatus);
+    orderRepository.save(order);
+
+    // Send Kafka message if needed
+    OrderMessage message = new OrderMessage();
+    message.setOperation("CONFIRM_ORDER");
+    message.setOrderId(orderId);
+    orderProducer.sendMessage(message);
+
+    return mapToOrderResponse(order);
+  }
+
+
+  public OrderResponse shipOrder(Long orderId, OrderStatus newStatus) {
+    Order order = orderRepository.findById(orderId)
+        .orElseThrow(() -> new ResourceNotFoundException("Order not found with ID: " + orderId));
+
+    order.setStatus(newStatus);
+    orderRepository.save(order);
+
+    // Send Kafka message if needed
+    OrderMessage message = new OrderMessage();
+    message.setOperation("SHIP_ORDER");
+    message.setOrderId(orderId);
+    orderProducer.sendMessage(message);
+
+    return mapToOrderResponse(order);
+  }
+
+
+  public OrderResponse deliverOrder(Long orderId, OrderStatus newStatus) {
+    Order order = orderRepository.findById(orderId)
+        .orElseThrow(() -> new ResourceNotFoundException("Order not found with ID: " + orderId));
+
+    order.setStatus(newStatus);
+    orderRepository.save(order);
+
+    // Send Kafka message if needed
+    OrderMessage message = new OrderMessage();
+    message.setOperation("DELIVER_ORDER");
+    message.setOrderId(orderId);
+    orderProducer.sendMessage(message);
+
+    return mapToOrderResponse(order);
+  }
+
+
 
   private OrderResponse mapToOrderResponse(Order order) {
     // You need to define this mapper.

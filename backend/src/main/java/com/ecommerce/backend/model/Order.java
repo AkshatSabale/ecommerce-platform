@@ -34,6 +34,17 @@ public class Order {
   @Enumerated(EnumType.STRING)
   private PaymentMethod paymentMethod;
 
+  @OneToOne(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
+  private Payment payment;
+
+  public void setPayment(Payment payment) {
+    this.payment = payment;
+    if (payment != null && payment.getOrder() != this) {
+      payment.setOrder(this);
+    }
+  }
+
+
   private String doorNumber;
   private String addressLine1;
   private String addressLine2;

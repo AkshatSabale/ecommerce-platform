@@ -5,6 +5,7 @@ import StarRating from '../components/StarRating';
 import Toast from '../components/Toast';
 import VerifiedPurchaseBadge from '../components/VerifiedPurchaseBadge';
 import { useAuth } from '../context/AuthContext';
+import ReviewForm from '../components/ReviewForm';
 
 interface ProductDetail {
   id: number;
@@ -17,13 +18,14 @@ interface ProductDetail {
 }
 
 interface ProductReview {
+  id: number;
   username: string;
   rating: number;
-  userId: number;
+  userId: number | null;
   comment: string;
   createdAt: string;
   updatedAt: string;
-  verifiedPurchase: boolean; // Add this field
+  verifiedPurchase: boolean;
 }
 
 const ProductDetailPage: React.FC = () => {
@@ -33,14 +35,15 @@ const ProductDetailPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
-  const { userId } = useAuth();
+  const { userId, isAuthenticated } = useAuth();
+  const [userReview, setUserReview] = useState<ProductReview | null>(null);
+  const [showReviewForm, setShowReviewForm] = useState(false);
+  const [isDeleting, setIsDeleting] = useState<number | null>(null);
 
   useEffect(() => {
     const fetchProductDetails = async () => {
       try {
         setLoading(true);
-
-        // Fetch all data in parallel
         const [productResponse, reviewsResponse, avgRatingResponse] = await Promise.all([
           api.get<ProductDetail>(`/api/products/${id}`),
           api.get<ProductReview[]>(`/reviews/product/${id}`),
@@ -53,6 +56,13 @@ const ProductDetailPage: React.FC = () => {
         });
         setReviews(reviewsResponse.data);
         setError(null);
+
+        if (isAuthenticated && userId) {
+          const userReview = reviewsResponse.data.find(review =>
+            review.userId?.toString() === userId.toString()
+          );
+          setUserReview(userReview || null);
+        }
       } catch (err) {
         console.error('Failed to fetch product:', err);
         setError('Product not found or failed to load');
@@ -62,7 +72,7 @@ const ProductDetailPage: React.FC = () => {
     };
 
     fetchProductDetails();
-  }, [id]);
+  }, [id, isAuthenticated, userId]);
 
   const handleAddToCart = async () => {
     if (!product) return;
@@ -76,6 +86,72 @@ const ProductDetailPage: React.FC = () => {
       } else {
         setToastMessage('Failed to add item to cart. Please try again.');
       }
+    }
+  };
+
+  const handleDeleteReview = async (reviewId: number) => {
+    if (!window.confirm('Are you sure you want to delete this review?')) return;
+
+    try {
+      setIsDeleting(reviewId);
+      await api.delete(`/reviews/${product?.id}`);
+      setToastMessage('Review deleted successfully!');
+
+      const [reviewsResponse, avgRatingResponse] = await Promise.all([
+        api.get<ProductReview[]>(`/reviews/product/${id}`),
+        api.get<number>(`/reviews/product/${id}/average`)
+      ]);
+
+      setReviews(reviewsResponse.data);
+      setProduct(prev => prev ? {
+        ...prev,
+        averageRating: avgRatingResponse.data || 0
+      } : null);
+      setUserReview(prev => prev?.id === reviewId ? null : prev);
+    } catch (error) {
+      console.error('Failed to delete review:', error);
+      setToastMessage('Failed to delete review. Please try again.');
+    } finally {
+      setIsDeleting(null);
+    }
+  };
+
+  const handleSubmitReview = async (rating: number, comment: string) => {
+    try {
+      if (!id) {
+        setToastMessage('Product ID not available');
+        return;
+      }
+
+      await api.post('/reviews', {
+        productId: id,
+        rating,
+        comment
+      });
+
+      setToastMessage('Review submitted successfully!');
+      setShowReviewForm(false);
+
+      const [reviewsResponse, avgRatingResponse] = await Promise.all([
+        api.get<ProductReview[]>(`/reviews/product/${id}`),
+        api.get<number>(`/reviews/product/${id}/average`)
+      ]);
+
+      setReviews(reviewsResponse.data);
+      setProduct(prev => prev ? {
+        ...prev,
+        averageRating: avgRatingResponse.data || 0
+      } : null);
+
+      if (userId) {
+        const userReview = reviewsResponse.data.find(review =>
+          review.userId?.toString() === userId.toString()
+        );
+        setUserReview(userReview || null);
+      }
+    } catch (error) {
+      console.error('Failed to submit review:', error);
+      setToastMessage('Failed to submit review. Please try again.');
     }
   };
 
@@ -144,38 +220,103 @@ const ProductDetailPage: React.FC = () => {
 
       {/* Reviews Section */}
       <div className="mt-12">
-        <h2 className="text-2xl font-bold mb-6">Customer Reviews</h2>
+        <div className="flex justify-between items-center mb-6">
+          <h2 className="text-2xl font-bold">Customer Reviews</h2>
+          {isAuthenticated && !userReview && (
+            <button
+              onClick={() => setShowReviewForm(true)}
+              className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+            >
+              Write a Review
+            </button>
+          )}
+        </div>
+
+        {showReviewForm && (
+          <ReviewForm
+            onSubmit={handleSubmitReview}
+            onCancel={() => setShowReviewForm(false)}
+            initialRating={userReview?.rating || 0}
+            initialComment={userReview?.comment || ''}
+          />
+        )}
+
+        {userReview && (
+          <div className="mb-6 p-4 bg-gray-50 rounded-lg">
+            <div className="flex justify-between items-start">
+              <div>
+                <h3 className="font-medium">Your Review</h3>
+                <div className="flex items-center space-x-1 mt-1">
+                  <StarRating rating={userReview.rating} />
+                  <span className="text-sm text-gray-500">
+                    {new Date(userReview.createdAt).toLocaleDateString()}
+                  </span>
+                  {userReview.updatedAt !== userReview.createdAt && (
+                    <span className="text-xs text-gray-400">(edited)</span>
+                  )}
+                </div>
+                <p className="mt-2 text-gray-700">{userReview.comment}</p>
+              </div>
+              <div className="flex space-x-2">
+                <button
+                  onClick={() => setShowReviewForm(true)}
+                  className="text-blue-500 hover:text-blue-700 text-sm"
+                >
+                  Edit
+                </button>
+                <button
+                  onClick={() => handleDeleteReview(userReview.id)}
+                  disabled={isDeleting === userReview.id}
+                  className={`text-red-500 hover:text-red-700 text-sm ${
+                    isDeleting === userReview.id ? 'opacity-50 cursor-not-allowed' : ''
+                  }`}
+                >
+                  {isDeleting === userReview.id ? 'Deleting...' : 'Delete'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {reviews.length === 0 ? (
           <p className="text-gray-500">No reviews yet. Be the first to review!</p>
         ) : (
           <div className="space-y-6">
-            {reviews.map((review, index) => (
-              <div key={index} className="border-b pb-4">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <div className="flex items-center">
-                      <h3 className="font-medium">{review.username}</h3>
-                      {review.verifiedPurchase && ( // Use the verifiedPurchase field
-                        <VerifiedPurchaseBadge />
-                      )}
+            {reviews
+              .filter(review => !userReview || review.id !== userReview.id)
+              .map((review) => (
+                <div key={review.id} className="border-b pb-4">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <div className="flex items-center">
+                        <h3 className="font-medium">{review.username}</h3>
+                        {review.verifiedPurchase && <VerifiedPurchaseBadge />}
+                      </div>
+                      <div className="flex items-center space-x-1 mt-1">
+                        <StarRating rating={review.rating} />
+                        <span className="text-sm text-gray-500">
+                          {new Date(review.createdAt).toLocaleDateString()}
+                        </span>
+                        {review.updatedAt !== review.createdAt && (
+                          <span className="text-xs text-gray-400">(edited)</span>
+                        )}
+                      </div>
                     </div>
-                    <div className="flex items-center space-x-1 mt-1">
-                      <StarRating rating={review.rating} />
-                      <span className="text-sm text-gray-500">
-                        {new Date(review.createdAt).toLocaleDateString()}
-                      </span>
-                    </div>
+                    {userId === review.userId && (
+                      <button
+                        onClick={() => handleDeleteReview(review.id)}
+                        disabled={isDeleting === review.id}
+                        className={`text-red-500 hover:text-red-700 text-sm ${
+                          isDeleting === review.id ? 'opacity-50 cursor-not-allowed' : ''
+                        }`}
+                      >
+                        {isDeleting === review.id ? 'Deleting...' : 'Delete'}
+                      </button>
+                    )}
                   </div>
-                  {review.updatedAt !== review.createdAt && (
-                    <span className="text-xs text-gray-400">
-                      (edited)
-                    </span>
-                  )}
+                  <p className="mt-2 text-gray-700">{review.comment}</p>
                 </div>
-                <p className="mt-2 text-gray-700">{review.comment}</p>
-              </div>
-            ))}
+              ))}
           </div>
         )}
       </div>

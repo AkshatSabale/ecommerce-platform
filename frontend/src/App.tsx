@@ -17,6 +17,8 @@ import AdminDashboard from './pages/AdminDashboard';
 import ProductDetailPage from './pages/ProductDetailPage';
 import AdminLayout from './components/AdminLayout';
 import AdminDashboardAnalytics from './pages/AdminDashboardAnalytics';
+import AdminOrdersPage from './pages/admin/AdminOrdersPage';
+import OrderDetailPage from './pages/admin/OrderDetailPage';
 
 const App: React.FC = () => {
   return (
@@ -36,6 +38,8 @@ const App: React.FC = () => {
             <Route path="/orders/:orderId" element={<OrderDetailsPage />} />
             <Route path="/wishlist" element={<WishlistPage />} />
             <Route path="/products/:id" element={<ProductDetailPage />} />
+            <Route path="/admin/orders" element={<AdminOrdersPage />} />
+            <Route path="/admin/orders/:orderId" element={<OrderDetailPage />} />
             <Route path="/admin" element={<AdminLayout />}>
                       <Route path="dashboard" element={<AdminDashboard />} />
                       <Route path="analytics" element={<AdminDashboardAnalytics />} />

@@ -12,6 +12,8 @@ import com.ecommerce.backend.service.UserService;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -25,6 +27,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 
@@ -41,6 +44,17 @@ public class OrderController {
   public ResponseEntity<List<OrderResponse>> getCart() {
     Long userId = getAuthenticatedUserId();
     return ResponseEntity.ok(orderService.getOrder(userId));
+  }
+
+  @PreAuthorize("hasRole('ADMIN')")
+  @GetMapping("/admin/orders")
+  public ResponseEntity<List<OrderResponse>> getAllOrders(
+      @RequestParam(required = false) OrderStatus status,
+      @RequestParam(defaultValue = "0") int page,
+      @RequestParam(defaultValue = "10") int size) {
+    Pageable pageable = PageRequest.of(page, size);
+    List<OrderResponse> orders = orderService.getAllOrders(status, pageable);
+    return ResponseEntity.ok(orders);
   }
 
   @GetMapping("/{orderId}")
@@ -100,12 +114,44 @@ public class OrderController {
     return ResponseEntity.accepted().body("Return approval request submitted.");
   }
 
-  @PutMapping("/users/{userId}/orders/{orderId}/confirm")
-  public ResponseEntity<OrderResponse> confirmOrder(
-      @PathVariable Long userId,
-      @PathVariable Long orderId) {
-    OrderResponse response = orderService.confirmOrderAndDeductInventory(userId, orderId);
-    return ResponseEntity.accepted().body(response);
+
+  @PreAuthorize("hasRole('ADMIN')")
+  @PostMapping("/{orderId}/confirm")
+  public ResponseEntity<OrderResponse> confirmOrder(@PathVariable Long orderId) {
+    Order order = orderService.getOrderEntityById(orderId);
+
+    if (!order.getStatus().equals(OrderStatus.PENDING)) {
+      throw new IllegalStateException("Only PENDING orders can be confirmed");
+    }
+
+    OrderResponse response = orderService.confirmOrder(orderId, OrderStatus.CONFIRMED);
+    return ResponseEntity.ok(response);
+  }
+
+  @PreAuthorize("hasRole('ADMIN')")
+  @PostMapping("/{orderId}/ship")
+  public ResponseEntity<OrderResponse> shipOrder(@PathVariable Long orderId) {
+    Order order = orderService.getOrderEntityById(orderId);
+
+    if (!order.getStatus().equals(OrderStatus.CONFIRMED)) {
+      throw new IllegalStateException("Only CONFIRMED orders can be shipped");
+    }
+
+    OrderResponse response = orderService.shipOrder(orderId, OrderStatus.SHIPPED);
+    return ResponseEntity.ok(response);
+  }
+
+  @PreAuthorize("hasRole('ADMIN')")
+  @PostMapping("/{orderId}/deliver")
+  public ResponseEntity<OrderResponse> deliverOrder(@PathVariable Long orderId) {
+    Order order = orderService.getOrderEntityById(orderId);
+
+    if (!order.getStatus().equals(OrderStatus.SHIPPED)) {
+      throw new IllegalStateException("Only SHIPPED orders can be delivered");
+    }
+
+    OrderResponse response = orderService.deliverOrder(orderId, OrderStatus.DELIVERED);
+    return ResponseEntity.ok(response);
   }
 
 
