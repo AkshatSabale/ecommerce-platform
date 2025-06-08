@@ -7,11 +7,13 @@ import com.ecommerce.backend.dto.ReturnRequestDto;
 import com.ecommerce.backend.model.Order;
 import com.ecommerce.backend.model.OrderStatus;
 import com.ecommerce.backend.model.User;
+import com.ecommerce.backend.repository.OrderRepository;
 import com.ecommerce.backend.service.OrderService;
 import com.ecommerce.backend.service.UserService;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
@@ -39,6 +41,7 @@ public class OrderController {
 
   private final UserService userService;
   private final OrderService orderService;
+  private final OrderRepository orderRepository;
 
   @GetMapping
   public ResponseEntity<List<OrderResponse>> getCart() {
@@ -48,12 +51,13 @@ public class OrderController {
 
   @PreAuthorize("hasRole('ADMIN')")
   @GetMapping("/admin/orders")
-  public ResponseEntity<List<OrderResponse>> getAllOrders(
+  public ResponseEntity<Page<OrderResponse>> getAllOrders(
       @RequestParam(required = false) OrderStatus status,
       @RequestParam(defaultValue = "0") int page,
-      @RequestParam(defaultValue = "10") int size) {
+      @RequestParam(defaultValue = "10") int size
+  ) {
     Pageable pageable = PageRequest.of(page, size);
-    List<OrderResponse> orders = orderService.getAllOrders(status, pageable);
+    Page<OrderResponse> orders =  orderService.getAllOrders(status, pageable);
     return ResponseEntity.ok(orders);
   }
 

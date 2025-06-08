@@ -12,6 +12,7 @@ import com.ecommerce.backend.repository.ProductRepository;
 import com.ecommerce.backend.repository.ProductReviewRepository;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import lombok.*;
 import org.springframework.cache.annotation.CacheEvict;
@@ -28,8 +29,19 @@ public class ProductReviewService {
 
   @CacheEvict(value = {"productReviews", "productAverageRatings"}, key = "#request.productId")
   public ProductReviewResponse addOrUpdateReview(Long userId, ProductReviewRequest request) {
+    // First try to find existing review
+    Optional<ProductReview> existingReview = reviewRepository.findByProductIdAndUserId(
+        request.getProductId(),
+        userId
+    );
+
     ProductReviewMessage message = new ProductReviewMessage();
     message.setOperation("CREATE_OR_UPDATE");
+    message.setProductId(request.getProductId());
+    message.setUserId(userId);
+
+    // If review exists, include its ID for update
+    existingReview.ifPresent(review -> message.setReviewId(review.getId()));
 
     ProductReviewPayload payload = new ProductReviewPayload(
         request.getProductId(),
@@ -37,13 +49,14 @@ public class ProductReviewService {
         request.getRating(),
         request.getComment()
     );
-
     message.setReviewPayload(payload);
+
     reviewProducer.sendMessage(message);
 
-    // Return immediately, or optionally you can return some optimistic response
-    return new ProductReviewResponse(); // Or throw unsupported for sync response
+    return existingReview.map(this::mapToResponse)
+        .orElseGet(ProductReviewResponse::new);
   }
+
 
   @CacheEvict(value = {"productReviews", "productAverageRatings"}, key = "#productId")
   public void deleteReview(Long userId, Long productId) {
@@ -66,6 +79,8 @@ public class ProductReviewService {
     Double avg = reviewRepository.findAverageRatingForProduct(productId);
     return avg != null ? avg : 0.0;
   }
+
+
 
   private ProductReviewResponse mapToResponse(ProductReview review) {
     return new ProductReviewResponse(

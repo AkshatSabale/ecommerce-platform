@@ -116,44 +116,62 @@ const ProductDetailPage: React.FC = () => {
     }
   };
 
-  const handleSubmitReview = async (rating: number, comment: string) => {
-    try {
-      if (!id) {
-        setToastMessage('Product ID not available');
-        return;
-      }
+const handleSubmitReview = async (rating: number, comment: string) => {
+  try {
+    if (!id) {
+      setToastMessage('Product ID not available');
+      return;
+    }
 
+    if (userReview) {
+      // Update existing review
+      await api.put(`/reviews/${userReview.id}`, {
+        productId: id,
+        rating,
+        comment
+      });
+      setToastMessage('Review updated successfully!');
+    } else {
+      // Create new review
       await api.post('/reviews', {
         productId: id,
         rating,
         comment
       });
-
       setToastMessage('Review submitted successfully!');
-      setShowReviewForm(false);
-
-      const [reviewsResponse, avgRatingResponse] = await Promise.all([
-        api.get<ProductReview[]>(`/reviews/product/${id}`),
-        api.get<number>(`/reviews/product/${id}/average`)
-      ]);
-
-      setReviews(reviewsResponse.data);
-      setProduct(prev => prev ? {
-        ...prev,
-        averageRating: avgRatingResponse.data || 0
-      } : null);
-
-      if (userId) {
-        const userReview = reviewsResponse.data.find(review =>
-          review.userId?.toString() === userId.toString()
-        );
-        setUserReview(userReview || null);
-      }
-    } catch (error) {
-      console.error('Failed to submit review:', error);
-      setToastMessage('Failed to submit review. Please try again.');
     }
-  };
+
+    setShowReviewForm(false);
+
+    // Refresh reviews after a short delay to allow Kafka processing
+    setTimeout(() => {
+      refreshReviews();
+    }, 1000);
+  } catch (error : any) {
+    console.error('Failed to submit review:', error);
+    setToastMessage(error.response?.data?.message || 'Failed to submit review. Please try again.');
+  }
+};
+
+const refreshReviews = async () => {
+  const [reviewsResponse, avgRatingResponse] = await Promise.all([
+    api.get<ProductReview[]>(`/reviews/product/${id}`),
+    api.get<number>(`/reviews/product/${id}/average`)
+  ]);
+
+  setReviews(reviewsResponse.data);
+  setProduct(prev => prev ? {
+    ...prev,
+    averageRating: avgRatingResponse.data || 0
+  } : null);
+
+  if (userId) {
+    const userReview = reviewsResponse.data.find(review =>
+      review.userId?.toString() === userId.toString()
+    );
+    setUserReview(userReview || null);
+  }
+};
 
   if (loading) {
     return <div className="p-4">Loading product details...</div>;
@@ -238,6 +256,7 @@ const ProductDetailPage: React.FC = () => {
             onCancel={() => setShowReviewForm(false)}
             initialRating={userReview?.rating || 0}
             initialComment={userReview?.comment || ''}
+            isEditing={!!userReview}
           />
         )}
 

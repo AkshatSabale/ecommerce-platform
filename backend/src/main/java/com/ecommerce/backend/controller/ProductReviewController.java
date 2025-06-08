@@ -51,6 +51,7 @@ public class ProductReviewController {
     return ResponseEntity.ok(average);
   }
 
+
   private Long getAuthenticatedUserId() {
     Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
     if (authentication == null || !authentication.isAuthenticated()) {

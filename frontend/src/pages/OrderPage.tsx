@@ -12,7 +12,14 @@ interface AddressData {
 }
 
 interface LocationState {
-  cart: any;
+  cart: {
+    items: Array<{
+      productId: number;
+      productName: string;
+      productPrice: number;
+      quantity: number;
+    }>;
+  };
 }
 
 interface RazorpayOrderResponse {
@@ -32,7 +39,7 @@ interface UserDetails {
 }
 
 const OrderPage: React.FC = () => {
-  const { state } = useLocation() as { state: LocationState };
+  const { state } = useLocation() as { state: LocationState | null };
   const navigate = useNavigate();
   const { isAuthenticated } = useAuth();
 
@@ -49,28 +56,60 @@ const OrderPage: React.FC = () => {
   const [error, setError] = useState('');
   const [userDetails, setUserDetails] = useState<UserDetails | null>(null);
 
+  // Calculate total price safely
+  const totalPrice = state?.cart?.items.reduce(
+    (sum: number, item) => sum + item.productPrice * item.quantity,
+    0
+  ) || 0;
+
+  useEffect(() => {
+    const fetchAddress = async () => {
+      try {
+        const addressResponse = await api.get<AddressData>('/api/address');
+        setAddress(addressResponse.data);
+      } catch (err) {
+        console.error('Failed to load address:', err);
+        setError('Failed to load address');
+      }
+    };
+
+    if (useSavedAddress) {
+      fetchAddress();
+    } else {
+      // Clear address fields when checkbox is unticked
+      setAddress({
+        doorNumber: '',
+        addressLine1: '',
+        addressLine2: '',
+        pinCode: 0,
+        city: '',
+      });
+    }
+  }, [useSavedAddress]);
+
   useEffect(() => {
     if (!isAuthenticated) {
       navigate('/login');
       return;
     }
 
-    const fetchData = async () => {
+    if (!state?.cart?.items) {
+      navigate('/cart');
+      return;
+    }
+
+    const fetchUser = async () => {
       try {
         const userResponse = await api.get<UserDetails>('/users/me');
         setUserDetails(userResponse.data);
-
-        const addressResponse = await api.get<AddressData>('/api/address');
-        setAddress(addressResponse.data);
       } catch (err) {
         console.error('Failed to load user data:', err);
-        setError('Failed to load user/address data');
-        setUseSavedAddress(false);
+        setError('Failed to load user data');
       }
     };
 
-    fetchData();
-  }, [isAuthenticated, navigate]);
+    fetchUser();
+  }, [isAuthenticated, navigate, state]);
 
   const handleInputChange = (field: keyof AddressData, value: string) => {
     setAddress(prev => ({ ...prev, [field]: value }));
@@ -89,35 +128,29 @@ const OrderPage: React.FC = () => {
     return true;
   };
 
- const handlePlaceOrder = async (paymentId: string | null, razorpayOrderId: string | null) => {
-   try {
-     // 1. Make the POST request and get the OrderResponse
-     const response = await api.post<{
-       id: number;        // Changed from Long in Java to number in TS
-       list: any[];       // Adjust this type as needed
-       status: string;
-       totalAmount: number;
-       paymentMethod: string;
-       addressDto: any;   // Adjust this type as needed
-       createdAt: string;
-     }>('/checkout', {
-       paymentMethod: paymentMethod === 'cod' ? 'COD' : 'UPI',
-       address,
-       paymentId,
-       orderId: razorpayOrderId,
-     });
+  const handlePlaceOrder = async (paymentId: string | null, razorpayOrderId: string | null) => {
+    try {
+      const response = await api.post<{
+        id: number;
+        list: any[];
+        status: string;
+        totalAmount: number;
+        paymentMethod: string;
+        addressDto: any;
+        createdAt: string;
+      }>('/checkout', {
+        paymentMethod: paymentMethod === 'cod' ? 'COD' : 'UPI',
+        address,
+        paymentId,
+        orderId: razorpayOrderId,
+      });
 
-     // 2. Extract the order ID from the response
-     const orderId = response.data.id;
-
-     // 3. Navigate to the order details page
-     navigate(`/orders/${orderId}`);
-
-   } catch (err) {
-     console.error('Checkout failed:', err);
-     setError('Failed to place order. Please try again.');
-   }
- };
+      navigate(`/orders/${response.data.id}`);
+    } catch (err) {
+      console.error('Checkout failed:', err);
+      setError('Failed to place order. Please try again.');
+    }
+  };
 
   const loadRazorpayScript = (): Promise<boolean> => {
     return new Promise(resolve => {
@@ -144,15 +177,9 @@ const OrderPage: React.FC = () => {
         return;
       }
 
-      const totalAmount = Math.round(
-        state.cart.items.reduce((sum: number, item: any) => sum + item.productPrice * item.quantity, 0)
-      );
-
-      const orderResponse = await api.post<RazorpayOrderResponse>('/payments', null, {
-        params: { amount: totalAmount, currency: 'INR' }
-      });
-
-      const razorpayOrder = orderResponse.data;
+      const razorpayOrder = await api.post<RazorpayOrderResponse>('/payments', null, {
+        params: { amount: Math.round(totalPrice * 100), currency: 'INR' }
+      }).then(res => res.data);
 
       const options = {
         key: process.env.REACT_APP_RAZORPAY_KEY_ID || 'rzp_test_KzYYpa28iwjEsD',
@@ -209,10 +236,22 @@ const OrderPage: React.FC = () => {
     }
   };
 
-  const totalPrice = state?.cart?.items.reduce(
-    (sum: number, item: any) => sum + item.productPrice * item.quantity,
-    0
-  );
+  if (!state?.cart?.items) {
+    return (
+      <div className="max-w-2xl mx-auto p-4 md:p-6">
+        <div className="bg-white rounded-lg shadow-md p-6 text-center">
+          <h2 className="text-2xl font-bold mb-4">No Order Items Found</h2>
+          <p className="mb-4">Your cart appears to be empty or the session expired.</p>
+          <button
+            onClick={() => navigate('/cart')}
+            className="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700"
+          >
+            Back to Cart
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-2xl mx-auto p-4 md:p-6">
@@ -222,7 +261,7 @@ const OrderPage: React.FC = () => {
         {/* Order Summary */}
         <div className="mb-8">
           <h3 className="text-lg font-semibold mb-3">Order Summary</h3>
-          {state?.cart?.items.map((item: any) => (
+          {state.cart.items.map((item) => (
             <div key={item.productId} className="flex justify-between py-2 border-b">
               <span>{item.productName} × {item.quantity}</span>
               <span>₹{(item.productPrice * item.quantity).toFixed(2)}</span>

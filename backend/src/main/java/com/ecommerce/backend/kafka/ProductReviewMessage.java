@@ -6,8 +6,9 @@ import lombok.Setter;
 @Getter
 @Setter
 public class ProductReviewMessage {
-  private String operation; // CREATE_OR_UPDATE, DELETE
+  private String operation; // CREATE, UPDATE, DELETE
+  private Long reviewId; // For UPDATE operations
   private ProductReviewPayload reviewPayload;
-  private Long productId; // for DELETE
-  private Long userId; // for DELETE
+  private Long productId;
+  private Long userId;
 }

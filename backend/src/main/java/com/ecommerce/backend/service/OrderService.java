@@ -68,7 +68,7 @@ public class OrderService {
     return mapToOrderResponse(order);
   }
 
-  public List<OrderResponse> getAllOrders(OrderStatus status, Pageable pageable) {
+  public Page<OrderResponse> getAllOrders(OrderStatus status, Pageable pageable) {
     Page<Order> orders;
     if (status != null) {
       orders = orderRepository.findByStatus(status, pageable);
@@ -76,9 +76,8 @@ public class OrderService {
       orders = orderRepository.findAll(pageable);
     }
 
-    return orders.stream()
-        .map(this::mapToOrderResponse)
-        .collect(Collectors.toList());
+    // This is correct — Page.map(...) returns a Page<T>
+    return orders.map(this::mapToOrderResponse);
   }
 
 

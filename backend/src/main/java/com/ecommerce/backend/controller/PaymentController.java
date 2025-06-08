@@ -1,5 +1,6 @@
 package com.ecommerce.backend.controller;
 
+import com.ecommerce.backend.dto.PaymentResponse;
 import com.ecommerce.backend.dto.RazorpayOrderResponseDTO;
 import com.ecommerce.backend.model.Payment;
 import com.ecommerce.backend.model.User;
@@ -10,6 +11,9 @@ import java.util.List;
 import lombok.RequiredArgsConstructor;
 
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -54,17 +58,14 @@ public class PaymentController {
   }
 
   @GetMapping("/user")
-  public ResponseEntity<?> getUserPayments() {
+  public ResponseEntity<Page<PaymentResponse>> getUserPayments(
+      @RequestParam(defaultValue = "0") int page,
+      @RequestParam(defaultValue = "5") int size
+  ) {
     Long userId = getAuthenticatedUserId();
-    try {
-      List<Payment> payments = paymentService.getPaymentsByUser(userId);
-      return ResponseEntity.ok(payments);
-    } catch (Exception e) {
-      return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-          .body("Failed to fetch payments");
-    }
+    Page<PaymentResponse> paymentsPage = paymentService.getUserPayments(userId, page, size);
+    return ResponseEntity.ok(paymentsPage);
   }
-
 
   @PostMapping("/webhook")
   public ResponseEntity<?> handleWebhook(

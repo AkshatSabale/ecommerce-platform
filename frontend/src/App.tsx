@@ -20,6 +20,8 @@ import AdminDashboardAnalytics from './pages/AdminDashboardAnalytics';
 import AdminOrdersPage from './pages/admin/AdminOrdersPage';
 import OrderDetailPage from './pages/admin/OrderDetailPage';
 import PaymentDetailsPage from './pages/PaymentDetailsPage'
+import TransactionsPage from './pages/TransactionsPage';
+
 const App: React.FC = () => {
   return (
     <AuthProvider>
@@ -41,6 +43,7 @@ const App: React.FC = () => {
             <Route path="/admin/orders" element={<AdminOrdersPage />} />
             <Route path="/admin/orders/:orderId" element={<OrderDetailPage />} />
             <Route path="/payments/:paymentId" element={<PaymentDetailsPage />} />
+            <Route path="/transactions" element={<TransactionsPage />} />
             <Route path="/admin" element={<AdminLayout />}>
                       <Route path="dashboard" element={<AdminDashboard />} />
                       <Route path="analytics" element={<AdminDashboardAnalytics />} />

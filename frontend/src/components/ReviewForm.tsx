@@ -1,17 +1,20 @@
 import React, { useState } from 'react';
 
+
 interface ReviewFormProps {
   onSubmit: (rating: number, comment: string) => void;
   onCancel: () => void;
   initialRating: number;
   initialComment: string;
+  isEditing?: boolean;
 }
 
 const ReviewForm: React.FC<ReviewFormProps> = ({
   onSubmit,
   onCancel,
   initialRating,
-  initialComment
+  initialComment,
+  isEditing = false
 }) => {
   const [rating, setRating] = useState(initialRating);
   const [comment, setComment] = useState(initialComment);

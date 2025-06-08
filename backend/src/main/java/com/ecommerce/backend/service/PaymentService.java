@@ -1,5 +1,6 @@
 package com.ecommerce.backend.service;
 
+import com.ecommerce.backend.dto.PaymentResponse;
 import com.ecommerce.backend.model.Payment;
 import com.ecommerce.backend.model.User;
 import com.ecommerce.backend.repository.PaymentRepository;
@@ -18,6 +19,9 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.codec.Hex;
 import org.springframework.stereotype.Service;
 
@@ -62,8 +66,25 @@ public class PaymentService {
         .orElseThrow(() -> new RuntimeException("Payment not found"));
   }
 
-  public List<Payment> getPaymentsByUser(Long userId) {
-    return paymentRepository.findByUser_Id(userId);
+  public Page<PaymentResponse> getUserPayments(Long userId, int page, int size) {
+    Pageable pageable = PageRequest.of(page, size);
+
+    Page<Payment> paymentPage = paymentRepository.findByUser_Id(userId, pageable);
+
+    // Map Payment -> PaymentResponse
+    return paymentPage.map(this::mapToPaymentResponse);
+  }
+
+  private PaymentResponse mapToPaymentResponse(Payment payment) {
+    PaymentResponse response = new PaymentResponse();
+    response.setId(payment.getId());
+    response.setPaymentId(payment.getPaymentId());
+    response.setAmount(payment.getAmount());
+    response.setCurrency(payment.getCurrency());
+    response.setStatus(payment.getStatus());
+    response.setCreatedAt(payment.getCreatedAt().toString());
+    response.setOrderId(payment.getOrder() != null ? payment.getOrder().getId() : null);
+    return response;
   }
 
 
