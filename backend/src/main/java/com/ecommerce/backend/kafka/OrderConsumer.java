@@ -28,6 +28,7 @@ public class OrderConsumer {
   @Autowired
   private ProductRepository productRepository;
 
+  @Autowired
   private  UserRepository userRepository;
 
   @KafkaListener(topics = "order-topic", groupId = "order_group")
@@ -90,6 +91,7 @@ public class OrderConsumer {
             }
             orderRepository.save(order);
           });
+          break;
         case "COMPLETE_RETURN":
           orderRepository.findById(message.getOrderId()).ifPresent(order -> {
             order.setStatus(OrderStatus.RETURNED);

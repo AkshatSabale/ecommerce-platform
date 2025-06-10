@@ -3,6 +3,7 @@ import com.ecommerce.backend.dto.ProductResponse;
 import com.ecommerce.backend.kafka.ProductMessage;
 import com.ecommerce.backend.kafka.ProductProducer;
 import com.ecommerce.backend.model.Product;
+import com.ecommerce.backend.repository.CartRepository;
 import com.ecommerce.backend.repository.ProductRepository;
 import java.util.List;
 import java.util.Optional;
@@ -20,6 +21,8 @@ public class ProductService {
   private ProductProducer productProducer;
   @Autowired
   private ProductRepository productRepository;
+
+
 
   @CacheEvict(value = "products", key = "{#id, 'all'}")
   public List<Product> getAllProducts() {
@@ -64,6 +67,8 @@ public class ProductService {
 
   @CacheEvict(value = "products", key = "#id")
   public ResponseEntity<String> deleteProduct(long id) {
+
+
     ProductMessage message = new ProductMessage();
     message.setOperation("DELETE");
     message.setProductId(id);

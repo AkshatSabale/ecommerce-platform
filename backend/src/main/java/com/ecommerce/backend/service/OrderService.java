@@ -194,6 +194,7 @@ public class OrderService {
     OrderMessage message = new OrderMessage();
     message.setOperation("DELIVER_ORDER");
     message.setOrderId(orderId);
+    message.setUserId(order.getUserId());
     orderProducer.sendMessage(message);
 
     return mapToOrderResponse(order);

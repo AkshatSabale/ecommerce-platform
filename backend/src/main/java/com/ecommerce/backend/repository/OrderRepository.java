@@ -54,7 +54,7 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
     SELECT SUM(o.totalAmount)
     FROM Order o
     WHERE o.createdAt >= :fromDate
-      AND o.status = com.ecommerce.backend.model.OrderStatus.CONFIRMED
+      AND o.status = com.ecommerce.backend.model.OrderStatus.DELIVERED
     """)
   Optional<Double> findTotalRevenueSince(@Param("fromDate") LocalDateTime fromDate);
 
@@ -78,7 +78,7 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
         SELECT SUM(o.totalAmount)
         FROM Order o
         WHERE o.createdAt BETWEEN :startDate AND :endDate
-          AND o.status = com.ecommerce.backend.model.OrderStatus.CONFIRMED
+          AND o.status = com.ecommerce.backend.model.OrderStatus.DELIVERED
         """)
   Optional<Double> findTotalRevenueBetween(
       @Param("startDate") LocalDateTime startDate,
@@ -87,7 +87,7 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
   @Query("""
         SELECT SUM(o.totalAmount)
         FROM Order o
-        WHERE o.status = com.ecommerce.backend.model.OrderStatus.CONFIRMED
+        WHERE o.status = com.ecommerce.backend.model.OrderStatus.DELIVERED
         """)
   Optional<Double> findTotalRevenueAllTime();
 
@@ -98,7 +98,7 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
         )
         FROM Order o
         WHERE o.createdAt BETWEEN :startDate AND :endDate
-          AND o.status = com.ecommerce.backend.model.OrderStatus.CONFIRMED
+          AND o.status = com.ecommerce.backend.model.OrderStatus.DELIVERED
         GROUP BY CAST(o.createdAt AS LocalDate)
         ORDER BY CAST(o.createdAt AS LocalDate) ASC
         """)

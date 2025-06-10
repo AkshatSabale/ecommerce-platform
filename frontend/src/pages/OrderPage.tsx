@@ -178,7 +178,7 @@ const OrderPage: React.FC = () => {
       }
 
       const razorpayOrder = await api.post<RazorpayOrderResponse>('/payments', null, {
-        params: { amount: Math.round(totalPrice * 100), currency: 'INR' }
+        params: { amount: Math.round(totalPrice), currency: 'INR' }
       }).then(res => res.data);
 
       const options = {
