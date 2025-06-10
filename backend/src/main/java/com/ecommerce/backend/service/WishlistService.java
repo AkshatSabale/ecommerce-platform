@@ -18,12 +18,18 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
-@RequiredArgsConstructor
 public class WishlistService {
 
   private final WishlistRepository wishlistRepo;
   private final ProductRepository productRepo;
   private final WishlistProducer wishlistProducer;
+
+  public WishlistService(WishlistRepository wishlistRepo, ProductRepository productRepo,
+      WishlistProducer wishlistProducer) {
+    this.wishlistRepo = wishlistRepo;
+    this.productRepo = productRepo;
+    this.wishlistProducer = wishlistProducer;
+  }
 
   @Cacheable(value = "wishlists", key = "#userId")
   public WishlistResponse getWishlist(Long userId) {

@@ -34,6 +34,8 @@ class ProductServiceTest {
 
   private static final Logger logger = LoggerFactory.getLogger(ProductServiceTest.class);
 
+
+
   @BeforeEach
   void setUp() {
     logger.warn("Running ProductServiceTest setUp 🚀");

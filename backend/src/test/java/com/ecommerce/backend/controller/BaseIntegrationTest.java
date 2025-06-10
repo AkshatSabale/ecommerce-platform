@@ -17,12 +17,21 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.transaction.annotation.Transactional;
 
-@SpringBootTest
+
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
 @Transactional
 @Rollback
 @ExtendWith(SpringExtension.class)
+@SpringBootTest(properties = {
+    "spring.datasource.url=jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1",
+    "spring.datasource.driver-class-name=org.h2.Driver",
+    "spring.datasource.username=sa",
+    "spring.datasource.password=",
+    "spring.jpa.hibernate.ddl-auto=create-drop",
+    "spring.jpa.database-platform=org.hibernate.dialect.H2Dialect",
+    "spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.H2Dialect" // Explicit dialect
+})
 public abstract class BaseIntegrationTest {
 
   @Autowired

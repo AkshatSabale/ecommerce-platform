@@ -37,7 +37,7 @@ public class SecurityConfiguration {
         .cors(cors -> cors.configurationSource(corsConfigurationSource()))
       .authorizeHttpRequests(authorize -> authorize
           .requestMatchers("/api/auth/**", "/swagger-ui/**", "/v3/api-docs/**","/api/products","/images/**", "/api/products/search",
-              "/api/products/search/**","/reviews/**","/actuator/**","/api/products/{id}").permitAll()
+              "/api/products/search/**","/reviews/**","/actuator/**","/api/products/{id}","/h2-console/**").permitAll()
           .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
             .anyRequest().authenticated())
         /*
