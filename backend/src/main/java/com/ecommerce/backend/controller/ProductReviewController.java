@@ -5,6 +5,7 @@ import com.ecommerce.backend.dto.ProductReviewResponse;
 import com.ecommerce.backend.model.User;
 import com.ecommerce.backend.service.ProductReviewService;
 import com.ecommerce.backend.service.UserService;
+import com.ecommerce.backend.util.AuthUtil;
 import jakarta.validation.Valid;
 import java.util.List;
 import lombok.*;
@@ -25,17 +26,18 @@ public class ProductReviewController {
 
   private final ProductReviewService reviewService;
   private final UserService userService;
+  private final AuthUtil authUtil;
 
   @PostMapping
   public ResponseEntity<String> addOrUpdateReview(@RequestBody @Valid ProductReviewRequest request) {
-    Long userId = getAuthenticatedUserId();
+    Long userId = authUtil.getAuthenticatedUserId();
     reviewService.addOrUpdateReview(userId, request);
     return ResponseEntity.ok("Review submission request sent.");
   }
 
   @DeleteMapping("/{productId}")
   public ResponseEntity<String> deleteReview(@PathVariable Long productId) {
-    Long userId = getAuthenticatedUserId();
+    Long userId = authUtil.getAuthenticatedUserId();
     reviewService.deleteReview(userId, productId);
     return ResponseEntity.ok("Review deletion request sent.");
   }
@@ -52,17 +54,4 @@ public class ProductReviewController {
   }
 
 
-  private Long getAuthenticatedUserId() {
-    Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-    if (authentication == null || !authentication.isAuthenticated()) {
-      throw new SecurityException("User not authenticated");
-    }
-    Object principal = authentication.getPrincipal();
-    if (!(principal instanceof UserDetails)) {
-      throw new SecurityException("Invalid authentication principal");
-    }
-    String username = ((UserDetails) principal).getUsername();
-    User user = userService.getUserByUserName(username);
-    return user.getId();
-  }
 }

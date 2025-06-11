@@ -10,6 +10,7 @@ import com.ecommerce.backend.model.User;
 import com.ecommerce.backend.repository.OrderRepository;
 import com.ecommerce.backend.service.OrderService;
 import com.ecommerce.backend.service.UserService;
+import com.ecommerce.backend.util.AuthUtil;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -31,6 +32,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.server.ResponseStatusException;
 
 
 @RestController
@@ -42,10 +44,11 @@ public class OrderController {
   private final UserService userService;
   private final OrderService orderService;
   private final OrderRepository orderRepository;
+  private final AuthUtil authUtil;
 
   @GetMapping
   public ResponseEntity<List<OrderResponse>> getCart() {
-    Long userId = getAuthenticatedUserId();
+    Long userId = authUtil.getAuthenticatedUserId();
     return ResponseEntity.ok(orderService.getOrder(userId));
   }
 
@@ -63,13 +66,13 @@ public class OrderController {
 
   @GetMapping("/{orderId}")
   public ResponseEntity<OrderResponse> getCartById(@PathVariable Long orderId) {
-    Long userId = getAuthenticatedUserId();
+    Long userId = authUtil.getAuthenticatedUserId();
     return ResponseEntity.ok(orderService.getOrderById(userId, orderId));
   }
 
   @PatchMapping("/{orderId}/cancel")
   public ResponseEntity<String> cancelOrder(@PathVariable Long orderId) {
-    Long userId = getAuthenticatedUserId();
+    Long userId = authUtil.getAuthenticatedUserId();
     Order order = orderService.getOrderEntityById(userId, orderId);
 
     // Validate order can be cancelled
@@ -86,12 +89,11 @@ public class OrderController {
   @PostMapping("/{orderId}/return")
   public ResponseEntity<String> requestReturn(@PathVariable Long orderId,
       @RequestBody ReturnRequestDto returnRequest) {
-    Long userId = getAuthenticatedUserId();
+    Long userId = authUtil.getAuthenticatedUserId();
     Order order = orderService.getOrderEntityById(userId, orderId);
 
-    // Validate order can be returned
     if (!order.getStatus().equals(OrderStatus.DELIVERED)) {
-      throw new IllegalStateException("Only delivered orders can be returned");
+      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Only delivered orders can be returned");
     }
 
     orderService.requestReturn(orderId, returnRequest, userId);
@@ -160,21 +162,5 @@ public class OrderController {
 
 
 
-  private Long getAuthenticatedUserId() {
-    Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
-    if (authentication == null || !authentication.isAuthenticated()) {
-      throw new SecurityException("User not authenticated");
-    }
-
-    Object principal = authentication.getPrincipal();
-    if (!(principal instanceof UserDetails)) {
-      throw new SecurityException("Invalid authentication principal");
-    }
-
-    String username = ((UserDetails) principal).getUsername();
-    User user = userService.getUserByUserName(username);
-
-    return user.getId();
-  }
 }

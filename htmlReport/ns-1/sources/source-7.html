@@ -45,26 +45,26 @@ Current scope:     <a href="../../index.html">all classes</a>
   <td class="name">OrderController</td>
 <td class="coverageStat">
   <span class="percent">
-    15.4%
+    58.3%
   </span>
   <span class="absValue">
-    (2/13)
+    (7/12)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    0%
+    18.8%
   </span>
   <span class="absValue">
-    (0/22)
+    (3/16)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    3.7%
+    42.2%
   </span>
   <span class="absValue">
-    (2/54)
+    (19/45)
   </span>
 </td>
 </tr>
@@ -75,26 +75,26 @@ Current scope:     <a href="../../index.html">all classes</a>
   <td class="name"><strong>Total</strong></td>
 <td class="coverageStat">
   <span class="percent">
-    15.4%
+    58.3%
   </span>
   <span class="absValue">
-    (2/13)
+    (7/12)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    0%
+    18.8%
   </span>
   <span class="absValue">
-    (0/22)
+    (3/16)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    3.7%
+    42.2%
   </span>
   <span class="absValue">
-    (2/54)
+    (19/45)
   </span>
 </td>
 </tr>
@@ -117,6 +117,7 @@ Current scope:     <a href="../../index.html">all classes</a>
 &nbsp;import com.ecommerce.backend.repository.OrderRepository;
 &nbsp;import com.ecommerce.backend.service.OrderService;
 &nbsp;import com.ecommerce.backend.service.UserService;
+&nbsp;import com.ecommerce.backend.util.AuthUtil;
 &nbsp;import java.util.List;
 &nbsp;import lombok.RequiredArgsConstructor;
 &nbsp;import lombok.extern.slf4j.Slf4j;
@@ -138,6 +139,7 @@ Current scope:     <a href="../../index.html">all classes</a>
 &nbsp;import org.springframework.web.bind.annotation.RequestMapping;
 &nbsp;import org.springframework.web.bind.annotation.RequestParam;
 &nbsp;import org.springframework.web.bind.annotation.RestController;
+&nbsp;import org.springframework.web.server.ResponseStatusException;
 &nbsp;
 &nbsp;
 &nbsp;@RestController
@@ -149,11 +151,12 @@ Current scope:     <a href="../../index.html">all classes</a>
 &nbsp;  private final UserService userService;
 &nbsp;  private final OrderService orderService;
 &nbsp;  private final OrderRepository orderRepository;
+&nbsp;  private final AuthUtil authUtil;
 &nbsp;
 &nbsp;  @GetMapping
 &nbsp;  public ResponseEntity&lt;List&lt;OrderResponse&gt;&gt; getCart() {
-<b class="nc">&nbsp;    Long userId = getAuthenticatedUserId();</b>
-<b class="nc">&nbsp;    return ResponseEntity.ok(orderService.getOrder(userId));</b>
+<b class="fc">&nbsp;    Long userId = authUtil.getAuthenticatedUserId();</b>
+<b class="fc">&nbsp;    return ResponseEntity.ok(orderService.getOrder(userId));</b>
 &nbsp;  }
 &nbsp;
 &nbsp;  @PreAuthorize(&quot;hasRole(&#39;ADMIN&#39;)&quot;)
@@ -163,42 +166,41 @@ Current scope:     <a href="../../index.html">all classes</a>
 &nbsp;      @RequestParam(defaultValue = &quot;0&quot;) int page,
 &nbsp;      @RequestParam(defaultValue = &quot;10&quot;) int size
 &nbsp;  ) {
-<b class="nc">&nbsp;    Pageable pageable = PageRequest.of(page, size);</b>
-<b class="nc">&nbsp;    Page&lt;OrderResponse&gt; orders =  orderService.getAllOrders(status, pageable);</b>
-<b class="nc">&nbsp;    return ResponseEntity.ok(orders);</b>
+<b class="fc">&nbsp;    Pageable pageable = PageRequest.of(page, size);</b>
+<b class="fc">&nbsp;    Page&lt;OrderResponse&gt; orders =  orderService.getAllOrders(status, pageable);</b>
+<b class="fc">&nbsp;    return ResponseEntity.ok(orders);</b>
 &nbsp;  }
 &nbsp;
 &nbsp;  @GetMapping(&quot;/{orderId}&quot;)
 &nbsp;  public ResponseEntity&lt;OrderResponse&gt; getCartById(@PathVariable Long orderId) {
-<b class="nc">&nbsp;    Long userId = getAuthenticatedUserId();</b>
-<b class="nc">&nbsp;    return ResponseEntity.ok(orderService.getOrderById(userId, orderId));</b>
+<b class="fc">&nbsp;    Long userId = authUtil.getAuthenticatedUserId();</b>
+<b class="fc">&nbsp;    return ResponseEntity.ok(orderService.getOrderById(userId, orderId));</b>
 &nbsp;  }
 &nbsp;
 &nbsp;  @PatchMapping(&quot;/{orderId}/cancel&quot;)
 &nbsp;  public ResponseEntity&lt;String&gt; cancelOrder(@PathVariable Long orderId) {
-<b class="nc">&nbsp;    Long userId = getAuthenticatedUserId();</b>
-<b class="nc">&nbsp;    Order order = orderService.getOrderEntityById(userId, orderId);</b>
+<b class="fc">&nbsp;    Long userId = authUtil.getAuthenticatedUserId();</b>
+<b class="fc">&nbsp;    Order order = orderService.getOrderEntityById(userId, orderId);</b>
 &nbsp;
 &nbsp;    // Validate order can be cancelled
-<b class="nc">&nbsp;    if (!order.getStatus().equals(OrderStatus.PENDING) &amp;&amp;</b>
-<b class="nc">&nbsp;        !order.getStatus().equals(OrderStatus.CONFIRMED) &amp;&amp;</b>
+<b class="pc">&nbsp;    if (!order.getStatus().equals(OrderStatus.PENDING) &amp;&amp;</b>
+<b class="pc">&nbsp;        !order.getStatus().equals(OrderStatus.CONFIRMED) &amp;&amp;</b>
 <b class="nc">&nbsp;        !order.getStatus().equals(OrderStatus.SHIPPED)) {</b>
 <b class="nc">&nbsp;      throw new IllegalStateException(&quot;Order cannot be cancelled in its current state&quot;);</b>
 &nbsp;    }
 &nbsp;
-<b class="nc">&nbsp;    orderService.clearOrder(userId, orderId);</b>
-<b class="nc">&nbsp;    return ResponseEntity.accepted().body(&quot;Order cancellation request submitted.&quot;);</b>
+<b class="fc">&nbsp;    orderService.clearOrder(userId, orderId);</b>
+<b class="fc">&nbsp;    return ResponseEntity.accepted().body(&quot;Order cancellation request submitted.&quot;);</b>
 &nbsp;  }
 &nbsp;
 &nbsp;  @PostMapping(&quot;/{orderId}/return&quot;)
 &nbsp;  public ResponseEntity&lt;String&gt; requestReturn(@PathVariable Long orderId,
 &nbsp;      @RequestBody ReturnRequestDto returnRequest) {
-<b class="nc">&nbsp;    Long userId = getAuthenticatedUserId();</b>
-<b class="nc">&nbsp;    Order order = orderService.getOrderEntityById(userId, orderId);</b>
+<b class="fc">&nbsp;    Long userId = authUtil.getAuthenticatedUserId();</b>
+<b class="fc">&nbsp;    Order order = orderService.getOrderEntityById(userId, orderId);</b>
 &nbsp;
-&nbsp;    // Validate order can be returned
-<b class="nc">&nbsp;    if (!order.getStatus().equals(OrderStatus.DELIVERED)) {</b>
-<b class="nc">&nbsp;      throw new IllegalStateException(&quot;Only delivered orders can be returned&quot;);</b>
+<b class="pc">&nbsp;    if (!order.getStatus().equals(OrderStatus.DELIVERED)) {</b>
+<b class="fc">&nbsp;      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, &quot;Only delivered orders can be returned&quot;);</b>
 &nbsp;    }
 &nbsp;
 <b class="nc">&nbsp;    orderService.requestReturn(orderId, returnRequest, userId);</b>
@@ -267,23 +269,7 @@ Current scope:     <a href="../../index.html">all classes</a>
 &nbsp;
 &nbsp;
 &nbsp;
-&nbsp;  private Long getAuthenticatedUserId() {
-<b class="nc">&nbsp;    Authentication authentication = SecurityContextHolder.getContext().getAuthentication();</b>
 &nbsp;
-<b class="nc">&nbsp;    if (authentication == null || !authentication.isAuthenticated()) {</b>
-<b class="nc">&nbsp;      throw new SecurityException(&quot;User not authenticated&quot;);</b>
-&nbsp;    }
-&nbsp;
-<b class="nc">&nbsp;    Object principal = authentication.getPrincipal();</b>
-<b class="nc">&nbsp;    if (!(principal instanceof UserDetails)) {</b>
-<b class="nc">&nbsp;      throw new SecurityException(&quot;Invalid authentication principal&quot;);</b>
-&nbsp;    }
-&nbsp;
-<b class="nc">&nbsp;    String username = ((UserDetails) principal).getUsername();</b>
-<b class="nc">&nbsp;    User user = userService.getUserByUserName(username);</b>
-&nbsp;
-<b class="nc">&nbsp;    return user.getId();</b>
-&nbsp;  }
 &nbsp;}
 </code>
 </pre>
@@ -308,7 +294,7 @@ Current scope:     <a href="../../index.html">all classes</a>
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2025-06-10 15:03</div>
+    <div style="float:right;">generated on 2025-06-11 21:38</div>
 </div>
 </body>
 </html>

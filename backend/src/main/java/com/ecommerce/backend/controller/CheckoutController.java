@@ -7,6 +7,7 @@ import com.ecommerce.backend.model.User;
 import com.ecommerce.backend.service.CartService;
 import com.ecommerce.backend.service.CheckoutService;
 import com.ecommerce.backend.service.UserService;
+import com.ecommerce.backend.util.AuthUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -27,32 +28,17 @@ public class CheckoutController
 {
   private final CheckoutService checkoutService;
   private final UserService userService;
+  private final AuthUtil authUtil;
 
   @PostMapping
   public ResponseEntity<OrderResponse> checkout(@RequestBody CheckoutRequest request)
   {
 
-    Long userId = getAuthenticatedUserId();
+    Long userId = authUtil.getAuthenticatedUserId();
     System.out.println("Checkout request received: " + request);
     OrderResponse orderResponse = checkoutService.checkout(userId, request);
     return ResponseEntity.ok(orderResponse);
   }
 
-  private Long getAuthenticatedUserId() {
-    Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
-    if (authentication == null || !authentication.isAuthenticated()) {
-      throw new SecurityException("User not authenticated");
-    }
-
-    Object principal = authentication.getPrincipal();
-    if (!(principal instanceof UserDetails)) {
-      throw new SecurityException("Invalid authentication principal");
-    }
-
-    String username = ((UserDetails) principal).getUsername();
-    User user = userService.getUserByUserName(username);
-
-    return user.getId();
-  }
 }

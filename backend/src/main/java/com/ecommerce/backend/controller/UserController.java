@@ -1,11 +1,11 @@
 package com.ecommerce.backend.controller;
 
 
-import com.ecommerce.backend.dto.LoginUserDto;
 import com.ecommerce.backend.exception.ResourceNotFoundException;
 import com.ecommerce.backend.model.User;
 import com.ecommerce.backend.repository.UserRepository;
 import com.ecommerce.backend.service.UserService;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -25,9 +25,10 @@ import java.util.List;
 @RestController
 public class UserController {
   private final UserService userService;
-  private UserRepository userRepository;
-  public UserController(UserService userService) {
+  private final UserRepository userRepository;
+  public UserController(UserService userService, UserRepository userRepository) {
     this.userService = userService;
+    this.userRepository = userRepository;
   }
 
   @GetMapping("/me")

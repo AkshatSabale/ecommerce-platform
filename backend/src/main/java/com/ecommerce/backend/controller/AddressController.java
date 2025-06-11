@@ -4,6 +4,7 @@ import com.ecommerce.backend.dto.AddressResponse;
 import com.ecommerce.backend.model.User;
 import com.ecommerce.backend.service.AddressService;
 import com.ecommerce.backend.service.UserService;
+import com.ecommerce.backend.util.AuthUtil;
 import jakarta.validation.Valid;
 import java.util.NoSuchElementException;
 import org.springframework.http.HttpStatus;
@@ -26,15 +27,19 @@ public class AddressController {
   private final AddressService addressService;
   private final UserService userService;
 
-  public AddressController(AddressService addressService, UserService userService) {
+  private final AuthUtil authUtil;
+
+  public AddressController(AddressService addressService, UserService userService,
+      AuthUtil authUtil) {
     this.addressService = addressService;
     this.userService = userService;
+    this.authUtil = authUtil;
   }
 
   @GetMapping
   public ResponseEntity<?> getAddress() {
     try {
-      Long userId = getAuthenticatedUserId();
+      Long userId = authUtil.getAuthenticatedUserId();
       return ResponseEntity.ok(addressService.getAddress(userId));
     } catch (NoSuchElementException e) {
       return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
@@ -46,7 +51,7 @@ public class AddressController {
   @PostMapping
   public ResponseEntity<?> addAddress(@RequestBody @Valid AddressResponse addressResponse) {
     try {
-      Long userId = getAuthenticatedUserId();
+      Long userId = authUtil.getAuthenticatedUserId();
       addressService.addAddress(userId, addressResponse);
       return ResponseEntity.ok("Address added successfully.");
     } catch (IllegalStateException e) {
@@ -57,7 +62,7 @@ public class AddressController {
   @PutMapping
   public ResponseEntity<?> updateAddress(@RequestBody @Valid AddressResponse addressResponse) {
     try {
-      Long userId = getAuthenticatedUserId();
+      Long userId = authUtil.getAuthenticatedUserId();
       addressService.updateAddress(userId, addressResponse);
       return ResponseEntity.ok("Address updated successfully.");
     } catch (NoSuchElementException e) {
@@ -68,7 +73,7 @@ public class AddressController {
   @DeleteMapping
   public ResponseEntity<?> deleteAddress() {
     try {
-      Long userId = getAuthenticatedUserId();
+      Long userId = authUtil.getAuthenticatedUserId();
       addressService.deleteAddress(userId);
       return ResponseEntity.ok("Address deleted successfully.");
     } catch (NoSuchElementException e) {
@@ -76,20 +81,5 @@ public class AddressController {
     }
   }
 
-  private Long getAuthenticatedUserId() {
-    Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-    if (authentication == null || !authentication.isAuthenticated()) {
-      throw new SecurityException("User not authenticated");
-    }
 
-    Object principal = authentication.getPrincipal();
-    if (!(principal instanceof UserDetails)) {
-      throw new SecurityException("Invalid authentication principal");
-    }
-
-    String username = ((UserDetails) principal).getUsername();
-    User user = userService.getUserByUserName(username);
-
-    return user.getId();
-  }
 }

@@ -6,6 +6,7 @@ import com.ecommerce.backend.model.Payment;
 import com.ecommerce.backend.model.User;
 import com.ecommerce.backend.service.PaymentService;
 import com.ecommerce.backend.service.UserService;
+import com.ecommerce.backend.util.AuthUtil;
 import com.razorpay.RazorpayException;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -31,12 +32,13 @@ public class PaymentController {
 
   private final PaymentService paymentService;
   private final UserService userService;
+  private final AuthUtil authUtil;
 
   @PostMapping
   public ResponseEntity<?> createPaymentOrder(
       @RequestParam Double amount,
       @RequestParam String currency) {
-    Long userId = getAuthenticatedUserId();
+    Long userId = authUtil.getAuthenticatedUserId();
     try {
       Payment payment = paymentService.createAndSavePaymentOrder(amount, currency, userId);
       return ResponseEntity.ok(new RazorpayOrderResponseDTO(payment));
@@ -47,7 +49,7 @@ public class PaymentController {
   }
   @GetMapping("/{paymentId}")
   public ResponseEntity<?> getPayment(@PathVariable String paymentId) {
-    Long userId = getAuthenticatedUserId();
+    Long userId = authUtil.getAuthenticatedUserId();
     try {
       Payment payment = paymentService.getPaymentForUser(paymentId, userId);
       return ResponseEntity.ok(payment);
@@ -62,7 +64,7 @@ public class PaymentController {
       @RequestParam(defaultValue = "0") int page,
       @RequestParam(defaultValue = "5") int size
   ) {
-    Long userId = getAuthenticatedUserId();
+    Long userId = authUtil.getAuthenticatedUserId();
     Page<PaymentResponse> paymentsPage = paymentService.getUserPayments(userId, page, size);
     return ResponseEntity.ok(paymentsPage);
   }
@@ -84,26 +86,10 @@ public class PaymentController {
       @RequestParam String orderId,
       @RequestParam String paymentId,
       @RequestParam String signature) throws RazorpayException {
-    Long userId = getAuthenticatedUserId();
+    Long userId = authUtil.getAuthenticatedUserId();
     boolean verified = paymentService.verifyAndCompletePayment(orderId, paymentId, signature, userId);
     return ResponseEntity.ok(verified);
   }
 
-  private Long getAuthenticatedUserId() {
-    Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
-    if (authentication == null || !authentication.isAuthenticated()) {
-      throw new SecurityException("User not authenticated");
-    }
-
-    Object principal = authentication.getPrincipal();
-    if (!(principal instanceof UserDetails)) {
-      throw new SecurityException("Invalid authentication principal");
-    }
-
-    String username = ((UserDetails) principal).getUsername();
-    User user = userService.getUserByUserName(username);
-
-    return user.getId();
-  }
 }

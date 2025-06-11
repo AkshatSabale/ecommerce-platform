@@ -45,26 +45,26 @@ Current scope:     <a href="../../index.html">all classes</a>
   <td class="name">AuthenticationController</td>
 <td class="coverageStat">
   <span class="percent">
-    12.5%
+    100%
   </span>
   <span class="absValue">
-    (1/8)
+    (8/8)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    0%
+    25%
   </span>
   <span class="absValue">
-    (0/4)
+    (1/4)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    11.1%
+    89.7%
   </span>
   <span class="absValue">
-    (3/27)
+    (26/29)
   </span>
 </td>
 </tr>
@@ -75,26 +75,26 @@ Current scope:     <a href="../../index.html">all classes</a>
   <td class="name"><strong>Total</strong></td>
 <td class="coverageStat">
   <span class="percent">
-    12.5%
+    100%
   </span>
   <span class="absValue">
-    (1/8)
+    (8/8)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    0%
+    25%
   </span>
   <span class="absValue">
-    (0/4)
+    (1/4)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    11.1%
+    89.7%
   </span>
   <span class="absValue">
-    (3/27)
+    (26/29)
   </span>
 </td>
 </tr>
@@ -141,41 +141,45 @@ Current scope:     <a href="../../index.html">all classes</a>
 &nbsp;
 &nbsp;  @GetMapping(&quot;/check-admin&quot;)
 &nbsp;  public ResponseEntity&lt;Boolean&gt; checkAdmin() {
-<b class="nc">&nbsp;    Authentication auth = SecurityContextHolder.getContext().getAuthentication();</b>
-<b class="nc">&nbsp;    boolean isAdmin = auth.getAuthorities().stream()</b>
-<b class="nc">&nbsp;        .anyMatch(grantedAuthority -&gt; grantedAuthority.getAuthority().equals(&quot;ROLE_ADMIN&quot;));</b>
-<b class="nc">&nbsp;    return ResponseEntity.ok(isAdmin);</b>
+<b class="fc">&nbsp;    Authentication auth = SecurityContextHolder.getContext().getAuthentication();</b>
+<b class="fc">&nbsp;    boolean isAdmin = auth.getAuthorities().stream()</b>
+<b class="fc">&nbsp;        .anyMatch(grantedAuthority -&gt; grantedAuthority.getAuthority().equals(&quot;ROLE_ADMIN&quot;));</b>
+<b class="fc">&nbsp;    return ResponseEntity.ok(isAdmin);</b>
 &nbsp;  }
 &nbsp;
 &nbsp;  @PostMapping(&quot;/signup&quot;)
 &nbsp;  public ResponseEntity&lt;User&gt; register(@RequestBody RegisterUserDto registerUserDto) {
-<b class="nc">&nbsp;    User registeredUser = authenticationService.signup(registerUserDto);</b>
-<b class="nc">&nbsp;    return ResponseEntity.ok(registeredUser);</b>
+<b class="fc">&nbsp;    User registeredUser = authenticationService.signup(registerUserDto);</b>
+<b class="fc">&nbsp;    return ResponseEntity.ok(registeredUser);</b>
 &nbsp;  }
 &nbsp;
 &nbsp;  @PostMapping(&quot;/login&quot;)
-&nbsp;  public ResponseEntity&lt;LoginResponse&gt; authenticate(@RequestBody LoginUserDto loginUserDto){
-<b class="nc">&nbsp;    User authenticatedUser = authenticationService.authenticate(loginUserDto);</b>
-<b class="nc">&nbsp;    String jwtToken = jwtService.generateToken(authenticatedUser);</b>
-<b class="nc">&nbsp;    LoginResponse loginResponse = new LoginResponse(jwtToken, jwtService.getExpirationTime());</b>
-<b class="nc">&nbsp;    return ResponseEntity.ok(loginResponse);</b>
+&nbsp;  public ResponseEntity&lt;?&gt; authenticate(@RequestBody LoginUserDto loginUserDto) {
+&nbsp;    try {
+<b class="fc">&nbsp;      User authenticatedUser = authenticationService.authenticate(loginUserDto);</b>
+<b class="fc">&nbsp;      String jwtToken = jwtService.generateToken(authenticatedUser);</b>
+<b class="fc">&nbsp;      LoginResponse loginResponse = new LoginResponse(jwtToken, jwtService.getExpirationTime());</b>
+<b class="fc">&nbsp;      return ResponseEntity.ok(loginResponse);</b>
+<b class="fc">&nbsp;    } catch (RuntimeException e) {</b>
+<b class="fc">&nbsp;      return ResponseEntity.badRequest().body(e.getMessage());</b>
+&nbsp;    }
 &nbsp;  }
 &nbsp;
 &nbsp;  @PostMapping(&quot;/verify&quot;)
 &nbsp;  public ResponseEntity&lt;?&gt; verifyUser(@RequestBody VerifyUserDto verifyUserDto) {
 &nbsp;    try {
-<b class="nc">&nbsp;      authenticationService.verifyUser(verifyUserDto);</b>
-<b class="nc">&nbsp;      return ResponseEntity.ok(&quot;Account verified successfully&quot;);</b>
-<b class="nc">&nbsp;    } catch (RuntimeException e) {</b>
-<b class="nc">&nbsp;      return ResponseEntity.badRequest().body(e.getMessage());</b>
+<b class="fc">&nbsp;      authenticationService.verifyUser(verifyUserDto);</b>
+<b class="fc">&nbsp;      return ResponseEntity.ok(&quot;Account verified successfully&quot;);</b>
+<b class="fc">&nbsp;    } catch (RuntimeException e) {</b>
+<b class="fc">&nbsp;      return ResponseEntity.badRequest().body(e.getMessage());</b>
 &nbsp;    }
 &nbsp;  }
 &nbsp;
 &nbsp;  @PostMapping(&quot;/resend&quot;)
 &nbsp;  public ResponseEntity&lt;?&gt; resendVerificationCode(@RequestParam String email) {
 &nbsp;    try {
-<b class="nc">&nbsp;      authenticationService.resendVerificationCode(email);</b>
-<b class="nc">&nbsp;      return ResponseEntity.ok(&quot;Verification code sent&quot;);</b>
+<b class="fc">&nbsp;      authenticationService.resendVerificationCode(email);</b>
+<b class="fc">&nbsp;      return ResponseEntity.ok(&quot;Verification code sent&quot;);</b>
 <b class="nc">&nbsp;    } catch (RuntimeException e) {</b>
 <b class="nc">&nbsp;      return ResponseEntity.badRequest().body(e.getMessage());</b>
 &nbsp;    }
@@ -185,18 +189,18 @@ Current scope:     <a href="../../index.html">all classes</a>
 &nbsp;  @PostMapping(&quot;/logout&quot;)
 &nbsp;  public ResponseEntity&lt;String&gt; logout(HttpServletRequest request) {
 &nbsp;    // Optionally extract token and log it or blacklist it if required
-<b class="nc">&nbsp;    String token = extractToken(request);</b>
+<b class="fc">&nbsp;    String token = extractToken(request);</b>
 &nbsp;    // log.info(&quot;User logging out with token: {}&quot;, token);
 &nbsp;
-<b class="nc">&nbsp;    return ResponseEntity.ok(&quot;Logged out successfully.&quot;);</b>
+<b class="fc">&nbsp;    return ResponseEntity.ok(&quot;Logged out successfully.&quot;);</b>
 &nbsp;  }
 &nbsp;
 &nbsp;  private String extractToken(HttpServletRequest request) {
-<b class="nc">&nbsp;    String authHeader = request.getHeader(&quot;Authorization&quot;);</b>
-<b class="nc">&nbsp;    if (authHeader != null &amp;&amp; authHeader.startsWith(&quot;Bearer &quot;)) {</b>
+<b class="fc">&nbsp;    String authHeader = request.getHeader(&quot;Authorization&quot;);</b>
+<b class="pc">&nbsp;    if (authHeader != null &amp;&amp; authHeader.startsWith(&quot;Bearer &quot;)) {</b>
 <b class="nc">&nbsp;      return authHeader.substring(7);</b>
 &nbsp;    }
-<b class="nc">&nbsp;    return null;</b>
+<b class="fc">&nbsp;    return null;</b>
 &nbsp;  }
 &nbsp;}
 &nbsp;
@@ -223,7 +227,7 @@ Current scope:     <a href="../../index.html">all classes</a>
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2025-06-10 15:03</div>
+    <div style="float:right;">generated on 2025-06-11 21:38</div>
 </div>
 </body>
 </html>

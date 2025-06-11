@@ -45,26 +45,26 @@ Current scope:     <a href="../../index.html">all classes</a>
   <td class="name">UserController</td>
 <td class="coverageStat">
   <span class="percent">
-    40%
+    100%
   </span>
   <span class="absValue">
-    (2/5)
+    (5/5)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    0%
+    50%
   </span>
   <span class="absValue">
-    (0/8)
+    (4/8)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    16.7%
+    89.5%
   </span>
   <span class="absValue">
-    (3/18)
+    (17/19)
   </span>
 </td>
 </tr>
@@ -75,26 +75,26 @@ Current scope:     <a href="../../index.html">all classes</a>
   <td class="name"><strong>Total</strong></td>
 <td class="coverageStat">
   <span class="percent">
-    40%
+    100%
   </span>
   <span class="absValue">
-    (2/5)
+    (5/5)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    0%
+    50%
   </span>
   <span class="absValue">
-    (0/8)
+    (4/8)
   </span>
 </td>
 <td class="coverageStat">
   <span class="percent">
-    16.7%
+    89.5%
   </span>
   <span class="absValue">
-    (3/18)
+    (17/19)
   </span>
 </td>
 </tr>
@@ -108,11 +108,11 @@ Current scope:     <a href="../../index.html">all classes</a>
 <code class="sourceCode" id="sourceCode">&nbsp;package com.ecommerce.backend.controller;
 &nbsp;
 &nbsp;
-&nbsp;import com.ecommerce.backend.dto.LoginUserDto;
 &nbsp;import com.ecommerce.backend.exception.ResourceNotFoundException;
 &nbsp;import com.ecommerce.backend.model.User;
 &nbsp;import com.ecommerce.backend.repository.UserRepository;
 &nbsp;import com.ecommerce.backend.service.UserService;
+&nbsp;import lombok.RequiredArgsConstructor;
 &nbsp;import lombok.extern.slf4j.Slf4j;
 &nbsp;import org.springframework.http.HttpStatus;
 &nbsp;import org.springframework.http.ResponseEntity;
@@ -132,43 +132,44 @@ Current scope:     <a href="../../index.html">all classes</a>
 &nbsp;@RestController
 &nbsp;public class UserController {
 &nbsp;  private final UserService userService;
-&nbsp;  private UserRepository userRepository;
-<b class="fc">&nbsp;  public UserController(UserService userService) {</b>
+&nbsp;  private final UserRepository userRepository;
+<b class="fc">&nbsp;  public UserController(UserService userService, UserRepository userRepository) {</b>
 <b class="fc">&nbsp;    this.userService = userService;</b>
+<b class="fc">&nbsp;    this.userRepository = userRepository;</b>
 &nbsp;  }
 &nbsp;
 &nbsp;  @GetMapping(&quot;/me&quot;)
 &nbsp;  public ResponseEntity&lt;User&gt; getCurrentUser() {
-<b class="nc">&nbsp;    Authentication auth = SecurityContextHolder.getContext().getAuthentication();</b>
-<b class="nc">&nbsp;    if (auth == null || !auth.isAuthenticated()) {</b>
+<b class="fc">&nbsp;    Authentication auth = SecurityContextHolder.getContext().getAuthentication();</b>
+<b class="pc">&nbsp;    if (auth == null || !auth.isAuthenticated()) {</b>
 <b class="nc">&nbsp;      return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();</b>
 &nbsp;    }
 &nbsp;
 &nbsp;    // principal is UserDetails because your JWT filter set it that way
-<b class="nc">&nbsp;    UserDetails details = (UserDetails) auth.getPrincipal();</b>
-<b class="nc">&nbsp;    User user = userService.getUserByUserName(details.getUsername());</b>
-<b class="nc">&nbsp;    return ResponseEntity.ok(user);</b>
+<b class="fc">&nbsp;    UserDetails details = (UserDetails) auth.getPrincipal();</b>
+<b class="fc">&nbsp;    User user = userService.getUserByUserName(details.getUsername());</b>
+<b class="fc">&nbsp;    return ResponseEntity.ok(user);</b>
 &nbsp;  }
 &nbsp;
 &nbsp;  @GetMapping(&quot;/&quot;)
 &nbsp;  @PreAuthorize(&quot;hasRole(&#39;ADMIN&#39;)&quot;)
 &nbsp;  public ResponseEntity&lt;List&lt;User&gt;&gt; allUsers() {
-<b class="nc">&nbsp;    Authentication auth = SecurityContextHolder.getContext().getAuthentication();</b>
-<b class="nc">&nbsp;    if (auth == null || !auth.isAuthenticated()) {</b>
+<b class="fc">&nbsp;    Authentication auth = SecurityContextHolder.getContext().getAuthentication();</b>
+<b class="pc">&nbsp;    if (auth == null || !auth.isAuthenticated()) {</b>
 <b class="nc">&nbsp;      return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();</b>
 &nbsp;    }
 &nbsp;
 &nbsp;    // principal is UserDetails because your JWT filter set it that way
-<b class="nc">&nbsp;    UserDetails details = (UserDetails) auth.getPrincipal();</b>
-<b class="nc">&nbsp;    List &lt;User&gt; users = userService.allUsers();</b>
-<b class="nc">&nbsp;    return ResponseEntity.ok(users);</b>
+<b class="fc">&nbsp;    UserDetails details = (UserDetails) auth.getPrincipal();</b>
+<b class="fc">&nbsp;    List &lt;User&gt; users = userService.allUsers();</b>
+<b class="fc">&nbsp;    return ResponseEntity.ok(users);</b>
 &nbsp;  }
 &nbsp;
 &nbsp;  @GetMapping(&quot;/users/{userId}/purchased-products&quot;)
 &nbsp;  public ResponseEntity&lt;List&lt;Long&gt;&gt; getPurchasedProducts(@PathVariable Long userId) {
-<b class="nc">&nbsp;    User user = userRepository.findById(userId)</b>
-<b class="nc">&nbsp;        .orElseThrow(() -&gt; new ResourceNotFoundException(&quot;User not found&quot;));</b>
-<b class="nc">&nbsp;    return ResponseEntity.ok(user.getProductsPurchased());</b>
+<b class="fc">&nbsp;    User user = userRepository.findById(userId)</b>
+<b class="fc">&nbsp;        .orElseThrow(() -&gt; new ResourceNotFoundException(&quot;User not found&quot;));</b>
+<b class="fc">&nbsp;    return ResponseEntity.ok(user.getProductsPurchased());</b>
 &nbsp;  }
 &nbsp;}
 </code>
@@ -194,7 +195,7 @@ Current scope:     <a href="../../index.html">all classes</a>
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2025-06-10 15:03</div>
+    <div style="float:right;">generated on 2025-06-11 21:38</div>
 </div>
 </body>
 </html>

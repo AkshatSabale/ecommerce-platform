@@ -7,6 +7,7 @@ import com.ecommerce.backend.kafka.CartProducer;
 import com.ecommerce.backend.model.User;
 import com.ecommerce.backend.service.CartService;
 import com.ecommerce.backend.service.UserService;
+import com.ecommerce.backend.util.AuthUtil;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -24,56 +25,41 @@ public class CartController {
 
   private final CartService cartService;
   private final UserService userService;
+  private final AuthUtil authUtil;
 
   @GetMapping
   public ResponseEntity<CartResponse> getCart() {
-    Long userId = getAuthenticatedUserId();
+    Long userId = authUtil.getAuthenticatedUserId();
     return ResponseEntity.ok(cartService.getCart(userId));
   }
 
   @PostMapping("/items")
   public ResponseEntity<Void> addToCart(@RequestBody @Valid AddToCartRequest request) {
-    Long userId = getAuthenticatedUserId();
+    Long userId = authUtil.getAuthenticatedUserId();
     cartService.addToCart(userId, request.getProductId(), request.getQuantity());
     return ResponseEntity.accepted().build();
   }
 
   @PutMapping("/items/{productId}")
   public ResponseEntity<Void> updateCartItem(@PathVariable Long productId, @RequestParam int quantity) {
-    Long userId = getAuthenticatedUserId();
+    Long userId = authUtil.getAuthenticatedUserId();
     cartService.updateCartItem(userId, productId, quantity);
     return ResponseEntity.accepted().build();
   }
 
   @DeleteMapping("/items/{productId}")
   public ResponseEntity<Void> removeFromCart(@PathVariable Long productId) {
-    Long userId = getAuthenticatedUserId();
+    Long userId = authUtil.getAuthenticatedUserId();
     cartService.removeFromCart(userId, productId);
     return ResponseEntity.accepted().build();
   }
 
   @DeleteMapping
   public ResponseEntity<Void> clearCart() {
-    Long userId = getAuthenticatedUserId();
+    Long userId = authUtil.getAuthenticatedUserId();
     cartService.clearCart(userId);
     return ResponseEntity.accepted().build();
   }
 
-  private Long getAuthenticatedUserId() {
-    Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
-    if (authentication == null || !authentication.isAuthenticated()) {
-      throw new SecurityException("User not authenticated");
-    }
-
-    Object principal = authentication.getPrincipal();
-    if (!(principal instanceof UserDetails)) {
-      throw new SecurityException("Invalid authentication principal");
-    }
-
-    String username = ((UserDetails) principal).getUsername();
-    User user = userService.getUserByUserName(username);
-
-    return user.getId();
-  }
 }
