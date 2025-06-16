@@ -1,59 +1,61 @@
 # 🛒 Full-Stack Ecommerce Platform
 
-This is a full-featured ecommerce platform built as a personal project to demonstrate production-grade architecture and hands-on experience with scalable backend systems, real-time event processing, caching, and admin-level analytics. Developed using **Java (Spring Boot)** for the backend and **React + TypeScript** for the frontend.
+A full-featured ecommerce platform built as a personal project to demonstrate scalable architecture, event-driven design, caching strategies, and observability. The system supports real-time operations, admin dashboards, and production-grade DevOps practices.
 
 ---
 
 ## ✨ Key Features
 
 ### 🔐 Authentication & Access Control
-- JWT-based login/signup
-- Role-Based Access Control (RBAC) for admin and customer segregation
-- Email verification and token-based activation flow
+- JWT-based signup/login with refresh token support
+- Role-Based Access Control (RBAC) — Admin vs Customer
+- Email verification via token-based activation
 
-### 🛍 Ecommerce Functionality
-- Product listing, details, and reviews
-- Cart and order management
-- Razorpay integration (test mode) for online payments
-- Cash on Delivery (COD) option
-- Verified purchase tick on user reviews
+### 🛍 Ecommerce Features
+- Product catalog with ratings & reviews (1 review per user/product)
+- Add to cart, update, and clear cart operations
+- Order placement (COD & Razorpay online payment)
+- Verified purchase badge for reviews
+- Address management
 
 ### 🛠 System Architecture
-- Kafka message queues for write operations (create, update, delete)
-- Redis caching with intelligent eviction
-- PostgreSQL for production, H2 for test suite
-- REST APIs documented using Swagger/OpenAPI
+- Kafka-based message queues for all **write operations** (create/update/delete)
+- Redis for **caching** product, cart, and review data with intelligent eviction
+- PostgreSQL for production + H2 for isolated testing
+- Swagger/OpenAPI documentation for all REST APIs
 - Rate limiting for public endpoints
 
-### 📈 Monitoring & Analytics
-- Prometheus for metrics, Grafana dashboards
+### 📈 Monitoring & Admin Analytics
+- Prometheus metrics collection
+- Grafana dashboards
 - Admin-only analytics:
-    - Top-selling products
-    - Revenue over time
-    - Orders by status
-- Admin dashboards for product & order control
+  - Top-selling products
+  - Revenue over time
+  - Orders grouped by status
+- Admin interfaces to manage products and orders
 
 ### ✅ Testing
-- JUnit + Mockito for unit/integration testing
-- 70%+ line coverage
-- H2 in-memory DB for isolated test environments
+- 70%+ line coverage with **JUnit + Mockito**
+- H2 in-memory DB for integration tests
+- Controller, service, and repository layers thoroughly tested
 
 ---
 
 ## 🧰 Tech Stack
 
-| Layer       | Tools / Frameworks                           |
-|-------------|-----------------------------------------------|
-| **Frontend**| React, TypeScript, Tailwind CSS               |
-| **Backend** | Java, Spring Boot, Spring Security, Kafka     |
-| **Database**| PostgreSQL (prod), H2 (testing)               |
-| **Caching** | Redis                                         |
-| **Queueing**| Apache Kafka                                  |
-| **Payments**| Razorpay (test mode)                          |
-| **Testing** | JUnit, Mockito                                |
-| **Monitoring**| Prometheus, Grafana                        |
-| **Docs**    | Swagger / OpenAPI                             |
-| **Auth**    | JWT, Role-based access                        |
+| Layer        | Tech / Tools                           |
+|--------------|-----------------------------------------|
+| Frontend     | React, TypeScript, Tailwind CSS         |
+| Backend      | Java, Spring Boot, Spring Security      |
+| Database     | PostgreSQL (prod), H2 (test)            |
+| Caching      | Redis                                   |
+| Messaging    | Apache Kafka                            |
+| Payments     | Razorpay (test mode)                    |
+| Auth         | JWT, Email verification, RBAC           |
+| Monitoring   | Prometheus, Grafana                     |
+| Docs         | Swagger / OpenAPI                       |
+| Testing      | JUnit, Mockito                          |
+| Deployment   | Docker, Docker Compose                  |
 
 ---
 
@@ -67,3 +69,20 @@ cd ecommerce-platform/backend
 
 # Run with Maven
 ./mvnw spring-boot:run
+```
+
+```bash
+ Frontend Setup (React + TypeScript)
+
+cd ../frontend
+npm install
+npm run dev
+```
+
+```bash
+Dockerized Setup
+
+docker compose up --build
+```
+
+
