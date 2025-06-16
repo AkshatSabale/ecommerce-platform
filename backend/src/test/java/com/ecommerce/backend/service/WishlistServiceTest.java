@@ -45,8 +45,8 @@ class WishlistServiceTest {
     dummyWishlist.setUserId(100L);
     dummyWishlist.setProductIds(new HashSet<>());
 
-    when(wishlistRepository.findByUserId(100L)).thenReturn(Optional.empty());
-    when(wishlistRepository.save(any())).thenReturn(dummyWishlist);
+    lenient().when(wishlistRepository.findByUserId(100L)).thenReturn(Optional.empty());
+    lenient().when(wishlistRepository.save(any())).thenReturn(dummyWishlist);
   }
 
   @Test
