@@ -1,0 +1,15 @@
+{
+  "compilerOptions": {
+    "jsx": "react-jsx",
+    "target": "es2016",
+    "module": "commonjs",
+    "moduleResolution": "node",                        /* Added for Node-style resolution */
+    "resolveJsonModule": true,                         /* Allow importing JSON files */
+    "allowSyntheticDefaultImports": true,              /* Explicitly allow synthetic default imports */
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "strict": true,
+    "outDir": "./dist",                                /* Optional: Direct emitted files to dist/ */
+    "rootDir": "./src"                                 /* Optional: Set source root to src/ */
+  }
+}
